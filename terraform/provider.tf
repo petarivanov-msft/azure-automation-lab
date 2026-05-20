@@ -3,7 +3,7 @@ terraform {
 
   required_providers {
     azurerm = {
-      source  = "hashicorp/azurerm"
+      source = "hashicorp/azurerm"
       # Bumped from ~> 3.0 to ~> 4.0 to gain:
       #   runtime_environment_name on azurerm_automation_runbook (added in 4.59.0)
       # Breaking change audit vs 3.x:

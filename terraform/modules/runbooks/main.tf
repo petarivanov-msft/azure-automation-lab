@@ -274,49 +274,49 @@ resource "azurerm_automation_runbook" "ps51_vm_inventory" {
 # ==============================================================================
 
 resource "azurerm_automation_runbook" "ps74_parallel_processing" {
-  name                    = "Demo-ParallelProcessing-PS74"
-  location                = var.location
-  resource_group_name     = var.resource_group_name
-  automation_account_name = var.automation_account_name
-  log_verbose             = true
-  log_progress            = true
-  description             = "PowerShell 7.4 runbook - Demonstrates parallel processing with ForEach-Object -Parallel"
-  runbook_type            = "PowerShell"
+  name                     = "Demo-ParallelProcessing-PS74"
+  location                 = var.location
+  resource_group_name      = var.resource_group_name
+  automation_account_name  = var.automation_account_name
+  log_verbose              = true
+  log_progress             = true
+  description              = "PowerShell 7.4 runbook - Demonstrates parallel processing with ForEach-Object -Parallel"
+  runbook_type             = "PowerShell"
   runtime_environment_name = "PS74"
-  content                 = file("${path.module}/runbooks/Demo-ParallelProcessing-PS72.ps1")
-  tags                    = var.tags
+  content                  = file("${path.module}/runbooks/Demo-ParallelProcessing-PS72.ps1")
+  tags                     = var.tags
 
   depends_on = [azapi_resource.ps74_runtime]
 }
 
 resource "azurerm_automation_runbook" "ps74_modern_features" {
-  name                    = "Demo-ModernFeatures-PS74"
-  location                = var.location
-  resource_group_name     = var.resource_group_name
-  automation_account_name = var.automation_account_name
-  log_verbose             = true
-  log_progress            = true
-  description             = "PowerShell 7.4 runbook - Demonstrates ternary operators, null coalescing, and pipeline parallelization"
-  runbook_type            = "PowerShell"
+  name                     = "Demo-ModernFeatures-PS74"
+  location                 = var.location
+  resource_group_name      = var.resource_group_name
+  automation_account_name  = var.automation_account_name
+  log_verbose              = true
+  log_progress             = true
+  description              = "PowerShell 7.4 runbook - Demonstrates ternary operators, null coalescing, and pipeline parallelization"
+  runbook_type             = "PowerShell"
   runtime_environment_name = "PS74"
-  content                 = file("${path.module}/runbooks/Demo-ModernFeatures-PS72.ps1")
-  tags                    = var.tags
+  content                  = file("${path.module}/runbooks/Demo-ModernFeatures-PS72.ps1")
+  tags                     = var.tags
 
   depends_on = [azapi_resource.ps74_runtime]
 }
 
 resource "azurerm_automation_runbook" "ps74_resource_report" {
-  name                    = "Get-ResourceReport-PS74"
-  location                = var.location
-  resource_group_name     = var.resource_group_name
-  automation_account_name = var.automation_account_name
-  log_verbose             = true
-  log_progress            = true
-  description             = "PowerShell 7.4 runbook - Generate comprehensive Azure resource report"
-  runbook_type            = "PowerShell"
+  name                     = "Get-ResourceReport-PS74"
+  location                 = var.location
+  resource_group_name      = var.resource_group_name
+  automation_account_name  = var.automation_account_name
+  log_verbose              = true
+  log_progress             = true
+  description              = "PowerShell 7.4 runbook - Generate comprehensive Azure resource report"
+  runbook_type             = "PowerShell"
   runtime_environment_name = "PS74"
-  content                 = file("${path.module}/runbooks/Get-ResourceReport-PS72.ps1")
-  tags                    = var.tags
+  content                  = file("${path.module}/runbooks/Get-ResourceReport-PS72.ps1")
+  tags                     = var.tags
 
   depends_on = [azapi_resource.ps74_runtime]
 }
@@ -330,65 +330,65 @@ resource "azurerm_automation_runbook" "ps74_resource_report" {
 # ==============================================================================
 
 resource "azurerm_automation_runbook" "python_hello_world" {
-  name                    = "Hello-World-Python"
-  location                = var.location
-  resource_group_name     = var.resource_group_name
-  automation_account_name = var.automation_account_name
-  log_verbose             = true
-  log_progress            = true
-  description             = "Python 3.10 runbook - Hello World"
-  runbook_type            = "Python3"
+  name                     = "Hello-World-Python"
+  location                 = var.location
+  resource_group_name      = var.resource_group_name
+  automation_account_name  = var.automation_account_name
+  log_verbose              = true
+  log_progress             = true
+  description              = "Python 3.10 runbook - Hello World"
+  runbook_type             = "Python3"
   runtime_environment_name = "Python310"
-  content                 = file("${path.module}/runbooks/hello_world.py")
-  tags                    = var.tags
+  content                  = file("${path.module}/runbooks/hello_world.py")
+  tags                     = var.tags
 
   depends_on = [azapi_resource.python310_runtime]
 }
 
 resource "azurerm_automation_runbook" "python_resource_inventory" {
-  name                    = "Get-ResourceInventory-Python"
-  location                = var.location
-  resource_group_name     = var.resource_group_name
-  automation_account_name = var.automation_account_name
-  log_verbose             = true
-  log_progress            = true
-  description             = "Python 3.10 runbook - Get Azure resource inventory"
-  runbook_type            = "Python3"
+  name                     = "Get-ResourceInventory-Python"
+  location                 = var.location
+  resource_group_name      = var.resource_group_name
+  automation_account_name  = var.automation_account_name
+  log_verbose              = true
+  log_progress             = true
+  description              = "Python 3.10 runbook - Get Azure resource inventory"
+  runbook_type             = "Python3"
   runtime_environment_name = "Python310"
-  content                 = file("${path.module}/runbooks/get_resource_inventory.py")
-  tags                    = var.tags
+  content                  = file("${path.module}/runbooks/get_resource_inventory.py")
+  tags                     = var.tags
 
   depends_on = [azapi_resource.python310_runtime]
 }
 
 resource "azurerm_automation_runbook" "python_vm_management" {
-  name                    = "Manage-VMs-Python"
-  location                = var.location
-  resource_group_name     = var.resource_group_name
-  automation_account_name = var.automation_account_name
-  log_verbose             = true
-  log_progress            = true
-  description             = "Python 3.10 runbook - Start/Stop VMs using Azure SDK"
-  runbook_type            = "Python3"
+  name                     = "Manage-VMs-Python"
+  location                 = var.location
+  resource_group_name      = var.resource_group_name
+  automation_account_name  = var.automation_account_name
+  log_verbose              = true
+  log_progress             = true
+  description              = "Python 3.10 runbook - Start/Stop VMs using Azure SDK"
+  runbook_type             = "Python3"
   runtime_environment_name = "Python310"
-  content                 = file("${path.module}/runbooks/manage_vms.py")
-  tags                    = var.tags
+  content                  = file("${path.module}/runbooks/manage_vms.py")
+  tags                     = var.tags
 
   depends_on = [azapi_resource.python310_runtime]
 }
 
 resource "azurerm_automation_runbook" "python_tag_compliance" {
-  name                    = "Check-TagCompliance-Python"
-  location                = var.location
-  resource_group_name     = var.resource_group_name
-  automation_account_name = var.automation_account_name
-  log_verbose             = true
-  log_progress            = true
-  description             = "Python 3.10 runbook - Check resource tag compliance"
-  runbook_type            = "Python3"
+  name                     = "Check-TagCompliance-Python"
+  location                 = var.location
+  resource_group_name      = var.resource_group_name
+  automation_account_name  = var.automation_account_name
+  log_verbose              = true
+  log_progress             = true
+  description              = "Python 3.10 runbook - Check resource tag compliance"
+  runbook_type             = "Python3"
   runtime_environment_name = "Python310"
-  content                 = file("${path.module}/runbooks/check_tag_compliance.py")
-  tags                    = var.tags
+  content                  = file("${path.module}/runbooks/check_tag_compliance.py")
+  tags                     = var.tags
 
   depends_on = [azapi_resource.python310_runtime]
 }
