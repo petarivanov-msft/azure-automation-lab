@@ -9,16 +9,21 @@ Built this as a hands-on reference for the kinds of setups I troubleshoot as an 
 > and [`azure-hybrid-worker-lab`](https://github.com/petarivanov-msft/azure-hybrid-worker-lab).
 > Both originals remain available but new work happens here.
 
-## Two ways to deploy
+## Minimal deployment
 
-| Path | Use when | Location |
-|------|----------|----------|
-| **Full modular lab** | You want runbooks (PS 5.1, PS 7.4, Python), Windows + Linux + RHEL hybrid workers, optional Graph API | [`terraform/`](./terraform) |
-| **Minimal single-file example** | You want one Windows hybrid worker, top-to-bottom readable in one file, good for learning | [`examples/minimal-hybrid-worker/`](./examples/minimal-hybrid-worker) |
+There is only one deployment path: the full modular lab in [`terraform/`](./terraform).
+
+For a "minimal" deployment (just hybrid workers, no runbooks, no Graph API), use these variable values:
+
+```hcl
+enable_hybrid_workers = true
+enable_runbooks       = false
+enable_graph_api      = false
+```
 
 ---
 
-## Quick Start (Full Lab)
+## Quick Start
 
 Open [Azure Cloud Shell](https://portal.azure.com) (Bash) and run:
 
@@ -30,7 +35,7 @@ bash <(curl -s https://raw.githubusercontent.com/petarivanov-msft/azure-automati
 
 The script will ask for resource names, region, and which scenarios to deploy, then runs `terraform apply` for you.
 
-## What Gets Deployed (Full Lab)
+## What Gets Deployed
 
 **Always:**
 - Resource group + Automation Account with system-assigned managed identity
@@ -38,19 +43,20 @@ The script will ask for resource names, region, and which scenarios to deploy, t
 
 **Runbooks module** (`enable_runbooks = true`):
 - `Get-AzureInfo-PS51` / `Get-VMInventory-PS51` — PS 5.1
-- `Demo-ParallelProcessing-PS74` / `Demo-ModernFeatures-PS74` / `Get-ResourceReport-PS74` — PS 7.4
-- `Hello-World-Python` / `Get-ResourceInventory-Python` / `Manage-VMs-Python` / `Check-TagCompliance-Python` — Python 3.10
+- `Demo-ParallelProcessing-PS74` / `Demo-ModernFeatures-PS74` / `Get-ResourceReport-PS74` — PS 7.4 (runtime environment bound)
+- `Hello-World-Python` / `Get-ResourceInventory-Python` / `Manage-VMs-Python` / `Check-TagCompliance-Python` — Python 3.10 (runtime environment bound)
 
 **Hybrid Workers module** (`enable_hybrid_workers = true`):
 - 3 VMs: Windows Server 2022, Ubuntu 22.04, RHEL 9
 - Each registered as a hybrid worker with system-assigned MI
 - PowerShell Az modules pre-installed
+- `Test-HybridWorker-ManagedIdentity` runbook created and published for manual validation
 
 **Graph API module** (`enable_graph_api = false` by default):
 - Requires Application Administrator or Privileged Role Administrator in Entra ID
 - Adds `Get-UsersReport`, `Get-GroupsReport`, `Get-ApplicationsReport` runbooks
 
-## Manual Deployment (Full Lab)
+## Manual Deployment
 
 ```bash
 git clone https://github.com/petarivanov-msft/azure-automation-lab.git
@@ -80,12 +86,19 @@ Requirements: Terraform >= 1.3.0, Azure CLI, Bash
 AA=$(terraform output -raw automation_account_name)
 RG=$(terraform output -raw resource_group_name)
 
-# Run a runbook in the cloud
+# Run a PS 5.1 runbook in the cloud
 az automation runbook start --automation-account-name $AA --resource-group $RG --name "Get-VMInventory-PS51"
 
-# Run on a hybrid worker
-az automation runbook start --automation-account-name $AA --resource-group $RG --name "Get-AzureInfo-PS51" --run-on "hybrid-workers-windows"
+# Run the hybrid worker connectivity test on Windows workers
+az automation runbook start --automation-account-name $AA --resource-group $RG \
+  --name "Test-HybridWorker-ManagedIdentity" --run-on "hybrid-workers-windows"
+
+# Run the hybrid worker connectivity test on Linux workers
+az automation runbook start --automation-account-name $AA --resource-group $RG \
+  --name "Test-HybridWorker-ManagedIdentity" --run-on "hybrid-workers-linux"
 ```
+
+> **Note:** After `terraform apply`, allow 5–10 minutes for hybrid workers to fully register before running runbooks on them.
 
 ## Cleanup
 
@@ -109,20 +122,17 @@ azure-automation-lab/
 │       ├── runbooks/
 │       ├── graph_api/
 │       └── network/
-├── examples/
-│   └── minimal-hybrid-worker/          Flat single-file quickstart
 ├── scripts/
 │   └── cleanup-lab.sh
 ├── docs/
 │   └── MIGRATION_GUIDE.md
-├── init-lab.sh                          Cloud Shell bootstrap (full lab)
+├── init-lab.sh                          Cloud Shell bootstrap
 └── .github/workflows/terraform-ci.yml
 ```
 
 ## Documentation
 
 - [Migration Guide](docs/MIGRATION_GUIDE.md) — for users coming from older revisions
-- [Minimal example README](examples/minimal-hybrid-worker/README.md) — including troubleshooting notes for hybrid worker registration
 
 ## Resources
 
