@@ -1,0 +1,10 @@
+# Ensure shell scripts always use LF line endings
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Ensure PowerShell scripts use CRLF
+*.ps1 text eol=crlf
+
+# Terraform files
+*.tf text eol=lf
+*.tfvars text eol=lf
