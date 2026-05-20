@@ -1,5 +1,5 @@
 variable "resource_group_name" {
-  description = "Name of the resource group"
+  description = "Base name of the resource group (a random 5-char suffix is appended automatically)"
   type        = string
 }
 
