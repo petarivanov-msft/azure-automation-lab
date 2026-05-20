@@ -341,23 +341,28 @@ resource "azurerm_automation_runbook" "test_hybrid_worker" {
   tags    = var.tags
 }
 
+# Publish the test runbook on content changes (bash - no PowerShell dependency)
 resource "null_resource" "publish_test_runbook" {
   provisioner "local-exec" {
-    interpreter = ["pwsh", "-Command"]
+    interpreter = ["bash", "-c"]
     command     = <<-EOT
-      $ErrorActionPreference = 'Continue'
-      $runbook = az automation runbook show `
-        --automation-account-name '${var.automation_account_name}' `
-        --resource-group '${var.resource_group_name}' `
-        --name 'Test-HybridWorker-ManagedIdentity' 2>$null | ConvertFrom-Json
-      
-      if ($runbook.state -ne 'Published') {
-        az automation runbook publish `
-          --automation-account-name '${var.automation_account_name}' `
-          --resource-group '${var.resource_group_name}' `
+      set -e
+      state=$(az automation runbook show \
+        --automation-account-name '${var.automation_account_name}' \
+        --resource-group '${var.resource_group_name}' \
+        --name 'Test-HybridWorker-ManagedIdentity' \
+        --query state -o tsv 2>/dev/null || echo "")
+
+      if [ "$state" != "Published" ]; then
+        echo "Publishing Test-HybridWorker-ManagedIdentity..."
+        az automation runbook publish \
+          --automation-account-name '${var.automation_account_name}' \
+          --resource-group '${var.resource_group_name}' \
           --name 'Test-HybridWorker-ManagedIdentity'
-        Write-Host "Runbook published"
-      }
+        echo "Runbook published."
+      else
+        echo "Runbook already published."
+      fi
     EOT
   }
 
@@ -368,120 +373,34 @@ resource "null_resource" "publish_test_runbook" {
   }
 }
 
-resource "null_resource" "run_test_windows" {
-  count = var.run_test_runbook ? 1 : 0
-
+# Deployment summary (bash, no PowerShell, no WinGet feedback predictor crashes)
+resource "null_resource" "deployment_summary" {
   provisioner "local-exec" {
-    interpreter = ["pwsh", "-Command"]
+    interpreter = ["bash", "-c"]
     command     = <<-EOT
-      $ErrorActionPreference = 'Continue'
-      Write-Host "Running test on Windows hybrid worker..."
-      Start-Sleep -Seconds 30
-
-      $job = az automation runbook start `
-        --automation-account-name '${var.automation_account_name}' `
-        --resource-group '${var.resource_group_name}' `
-        --name 'Test-HybridWorker-ManagedIdentity' `
-        --run-on '${azurerm_automation_hybrid_runbook_worker_group.windows.name}' 2>$null | ConvertFrom-Json
-
-      if ($job) {
-        $jobName = $job.name
-        $maxWait = 180
-        $waited = 0
-        $status = "Running"
-
-        while ($status -notin @('Completed', 'Failed', 'Stopped', 'Suspended') -and $waited -lt $maxWait) {
-          Start-Sleep -Seconds 10
-          $waited += 10
-          $status = (az automation job show --automation-account-name '${var.automation_account_name}' --resource-group '${var.resource_group_name}' --name $jobName 2>$null | ConvertFrom-Json).status
-          Write-Host "  $status ($waited s)"
-        }
-
-        Write-Host "Windows hybrid worker test: $status"
-      } else {
-        Write-Host "Could not start job - worker may still be initializing"
-      }
+      echo ""
+      echo "=== Hybrid Worker Deployment Complete ==="
+      echo "Automation Account : ${var.automation_account_name}"
+      echo "Resource Group     : ${var.resource_group_name}"
+      echo "Worker groups      : ${azurerm_automation_hybrid_runbook_worker_group.windows.name}, ${azurerm_automation_hybrid_runbook_worker_group.linux.name}"
+      echo ""
+      echo "To run the connectivity test manually:"
+      echo "  az automation runbook start \\"
+      echo "    --automation-account-name '${var.automation_account_name}' \\"
+      echo "    --resource-group '${var.resource_group_name}' \\"
+      echo "    --name 'Test-HybridWorker-ManagedIdentity' \\"
+      echo "    --run-on '${azurerm_automation_hybrid_runbook_worker_group.windows.name}'"
+      echo ""
+      echo "Note: Hybrid workers may take 5-10 minutes after VM extension installation"
+      echo "to fully register with the Automation Account before runbooks can execute."
     EOT
   }
 
   depends_on = [
     null_resource.publish_test_runbook,
     azurerm_virtual_machine_extension.hybrid_worker_windows,
-    azurerm_virtual_machine_extension.windows_powershell_modules
-  ]
-
-  triggers = {
-    always_run = timestamp()
-  }
-}
-
-resource "null_resource" "run_test_ubuntu" {
-  count = var.run_test_runbook ? 1 : 0
-
-  provisioner "local-exec" {
-    interpreter = ["pwsh", "-Command"]
-    command     = <<-EOT
-      $ErrorActionPreference = 'Continue'
-      Write-Host "Running test on Ubuntu hybrid worker..."
-      Start-Sleep -Seconds 60
-
-      $job = az automation runbook start `
-        --automation-account-name '${var.automation_account_name}' `
-        --resource-group '${var.resource_group_name}' `
-        --name 'Test-HybridWorker-ManagedIdentity' `
-        --run-on '${azurerm_automation_hybrid_runbook_worker_group.linux.name}' 2>$null | ConvertFrom-Json
-
-      if ($job) {
-        $jobName = $job.name
-        $maxWait = 180
-        $waited = 0
-        $status = "Running"
-
-        while ($status -notin @('Completed', 'Failed', 'Stopped', 'Suspended') -and $waited -lt $maxWait) {
-          Start-Sleep -Seconds 10
-          $waited += 10
-          $status = (az automation job show --automation-account-name '${var.automation_account_name}' --resource-group '${var.resource_group_name}' --name $jobName 2>$null | ConvertFrom-Json).status
-          Write-Host "  $status ($waited s)"
-        }
-
-        Write-Host "Ubuntu hybrid worker test: $status"
-      } else {
-        Write-Host "Could not start job - worker may still be initializing"
-      }
-    EOT
-  }
-
-  depends_on = [
-    null_resource.publish_test_runbook,
-    null_resource.run_test_windows,
     azurerm_virtual_machine_extension.hybrid_worker_ubuntu,
-    azurerm_virtual_machine_extension.ubuntu_powershell_setup
-  ]
-
-  triggers = {
-    always_run = timestamp()
-  }
-}
-
-resource "null_resource" "test_summary" {
-  count = var.run_test_runbook ? 1 : 0
-
-  provisioner "local-exec" {
-    interpreter = ["pwsh", "-Command"]
-    command     = <<-EOT
-      Write-Host ""
-      Write-Host "Hybrid worker tests complete."
-      Write-Host "Automation Account : ${var.automation_account_name}"
-      Write-Host "Worker groups      : ${azurerm_automation_hybrid_runbook_worker_group.windows.name}, ${azurerm_automation_hybrid_runbook_worker_group.linux.name}"
-      Write-Host ""
-      Write-Host "To run the test manually:"
-      Write-Host "  az automation runbook start --automation-account-name '${var.automation_account_name}' --resource-group '${var.resource_group_name}' --name 'Test-HybridWorker-ManagedIdentity' --run-on '<worker-group>'"
-    EOT
-  }
-
-  depends_on = [
-    null_resource.run_test_windows,
-    null_resource.run_test_ubuntu
+    azurerm_virtual_machine_extension.hybrid_worker_rhel,
   ]
 
   triggers = {
