@@ -1,6 +1,6 @@
 #!/bin/bash
 # Azure Automation Scenarios Lab - init script
-# Usage: bash <(curl -s https://raw.githubusercontent.com/petarivanov-msft/azure-automation-scenarios/main/init-lab.sh)
+# Usage: bash <(curl -s https://raw.githubusercontent.com/petarivanov-msft/azure-automation-lab/main/init-lab.sh)
 # Note: use bash <(curl ...) not curl | bash - script needs interactive prompts
 
 set -e
@@ -57,18 +57,18 @@ echo -e "${BLUE}========================================${NC}"
 echo ""
 
 # Clone the repo (or pull latest if already cloned)
-if [ ! -d "azure-automation-scenarios" ]; then
+if [ ! -d "azure-automation-lab" ]; then
   echo -e "${CYAN}Cloning repository...${NC}"
-  git clone https://github.com/petarivanov-msft/azure-automation-scenarios.git
+  git clone https://github.com/petarivanov-msft/azure-automation-lab.git
 else
   echo -e "${CYAN}Updating existing repository...${NC}"
-  cd azure-automation-scenarios
+  cd azure-automation-lab
   git fetch origin
   git reset --hard origin/main
   cd ..
 fi
 
-cd azure-automation-scenarios
+cd azure-automation-lab
 
 # Set default values
 RESOURCE_GROUP="rg-automation-lab"

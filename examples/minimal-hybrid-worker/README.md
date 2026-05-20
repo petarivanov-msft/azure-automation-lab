@@ -1,6 +1,8 @@
-# azure-hybrid-worker-lab
+# Minimal Hybrid Worker Example
 
-Terraform config for deploying an Azure Automation Hybrid Worker environment. Built this as a portfolio project while working through some Hybrid Worker edge cases I kept seeing in support tickets.
+Flat, single-file Terraform config that deploys a complete Azure Automation Hybrid Worker lab. Originally `azure-hybrid-worker-lab` — kept here as a minimal, top-to-bottom readable reference.
+
+If you want the full modular lab (multiple runbooks, Linux/RHEL workers, Graph API), use the root `terraform/` directory instead. This example is for when you just need **one Windows hybrid worker** and want to see every resource in one file.
 
 ## What it deploys
 
@@ -23,8 +25,8 @@ Total: ~22 resources, ~7-10 min to deploy.
 ## Deploy
 
 ```bash
-git clone https://github.com/petarivanov-msft/azure-hybrid-worker-lab.git
-cd azure-hybrid-worker-lab
+git clone https://github.com/petarivanov-msft/azure-automation-lab.git
+cd azure-automation-lab/examples/minimal-hybrid-worker
 terraform init
 terraform apply -auto-approve
 ```
