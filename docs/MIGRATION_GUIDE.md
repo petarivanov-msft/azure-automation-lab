@@ -6,7 +6,7 @@ The repo was restructured from separate per-scenario directories into a single u
 
 **Old structure:** Four independent scenario directories (`01-graph-api-automation/`, `02-startstop-vms/`, etc.), each with its own Terraform state and PowerShell deploy script.
 
-**New structure:** Single `terraform/` directory with feature flags, shared automation account and network, deployed via `init-lab.sh`.
+**New structure:** Single `terraform/` directory with feature flags, shared automation account and network, deployed via `init-lab.sh` (bash) or `init-lab.ps1` (PowerShell).
 
 ## If You Have Old Deployments Running
 

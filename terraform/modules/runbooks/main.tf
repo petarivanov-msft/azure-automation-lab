@@ -3,10 +3,10 @@
 #
 # RESEARCH SOURCES & DECISIONS
 # ──────────────────────────────────────────────────────────────────────────────
-# [1] azurerm_automation_runbook (hashicorp/azurerm ~3.x)
+# [1] azurerm_automation_runbook (hashicorp/azurerm ~4.x)
 #     Source: https://raw.githubusercontent.com/hashicorp/terraform-provider-azurerm/main/website/docs/r/automation_runbook.html.markdown
 #     - Supports `runtime_environment_name` (Optional) to bind a runbook to a
-#       runtime environment. Works for runbook_type = "PowerShell" or "Python3".
+#       runtime environment. Works for runbook_type = "PowerShell" or "Python".
 #     - `content` can be set inline — no publish step needed. azurerm provider
 #       handles draft+publish internally when content is supplied.
 #     - API provider used: Microsoft.Automation 2024-10-23 (GA, not preview).
@@ -61,13 +61,6 @@
 #     Source: runtime-environment-overview page states API 2024-10-23 (GA).
 #     Old code used 2023-05-15-preview. Updated throughout.
 # ==============================================================================
-
-locals {
-  automation_account_id_parts = split("/", var.automation_account_id)
-  subscription_id             = local.automation_account_id_parts[2]
-  resource_group_from_id      = local.automation_account_id_parts[4]
-  automation_account_from_id  = local.automation_account_id_parts[8]
-}
 
 # ==============================================================================
 # Runtime Environment: PowerShell 7.4 (custom — no system-generated env exists)
@@ -318,7 +311,8 @@ resource "azurerm_automation_runbook" "ps74_resource_report" {
 # ==============================================================================
 # Python 3.10 Runbooks
 #
-# RESEARCH: runbook_type = "Python3" is valid (confirmed in azurerm docs).
+# RESEARCH: runbook_type = "Python" is required when using runtime_environment_name.
+# ("Python3" + runtime_environment_name returns 400.)
 # runtime_environment_name = "Python310" binds to our custom env.
 # content inline — no local-exec needed.
 # ==============================================================================

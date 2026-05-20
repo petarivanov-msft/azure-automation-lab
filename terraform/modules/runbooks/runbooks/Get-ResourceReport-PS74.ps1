@@ -74,6 +74,7 @@ try {
     # Resource groups (parallel)
     Write-Output "Resource groups:"
     $rgAnalysis = $resourceGroups | ForEach-Object -Parallel {
+        Connect-AzAccount -Identity | Out-Null
         $rgResources = Get-AzResource -ResourceGroupName $_.ResourceGroupName
         [PSCustomObject]@{
             Name          = $_.ResourceGroupName

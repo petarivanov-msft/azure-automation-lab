@@ -38,12 +38,6 @@ variable "enable_hybrid_workers" {
   default     = true
 }
 
-variable "run_test_runbook" {
-  description = "Automatically run test runbook on hybrid workers after deployment"
-  type        = bool
-  default     = true
-}
-
 variable "enable_graph_api" {
   description = "Enable Graph API automation scenario"
   type        = bool

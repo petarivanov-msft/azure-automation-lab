@@ -114,11 +114,13 @@ az automation runbook start --automation-account-name $AA --resource-group $RG \
 
 ```bash
 cd terraform
+export TF_VAR_vm_admin_password=$(cat .vm_admin.password)  # re-export if needed
 terraform destroy
 
-# Or use a helper:
-bash   scripts/cleanup-lab.sh    # bash
-pwsh   scripts/cleanup-lab.ps1   # PowerShell
+# Or use a helper (from repo root, terraform/, or scripts/ directory):
+bash   scripts/cleanup-lab.sh          # bash
+powershell scripts/cleanup-lab.ps1     # Windows PowerShell
+pwsh   scripts/cleanup-lab.ps1         # PowerShell 7+
 ```
 
 ## Repository Layout

@@ -4,7 +4,7 @@
 
 Please report security vulnerabilities through GitHub's private vulnerability reporting:
 
-1. Go to the [Security tab](https://github.com/petarivanov-msft/azure-automation-scenarios/security)
+1. Go to the [Security tab](https://github.com/petarivanov-msft/azure-automation-lab/security)
 2. Click "Report a vulnerability"
 3. Include description, steps to reproduce, and potential impact
 

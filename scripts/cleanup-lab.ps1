@@ -20,13 +20,16 @@ function Write-Err2($msg)   { Write-Host $msg -ForegroundColor Red }
 Write-Info 'Azure Automation Lab - Cleanup'
 Write-Host ''
 
-if (Test-Path 'terraform.tfvars') {
+# Locate the terraform directory from common invocation points
+if (Test-Path 'main.tf') {
   # already in terraform dir
-} elseif (Test-Path '../terraform/terraform.tfvars') {
-  Set-Location '../terraform'
+} elseif (Test-Path 'terraform\main.tf') {
+  Set-Location 'terraform'
+} elseif (Test-Path '..\terraform\main.tf') {
+  Set-Location '..\terraform'
 } else {
-  Write-Err2 'Error: terraform.tfvars not found.'
-  Write-Warn2 'Run from the terraform directory or repo root.'
+  Write-Err2 'Error: cannot locate the terraform/ directory.'
+  Write-Warn2 'Run from the repo root, terraform/ directory, or scripts/ directory.'
   exit 1
 }
 

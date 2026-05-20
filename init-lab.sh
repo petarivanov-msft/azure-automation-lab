@@ -56,6 +56,27 @@ echo -e "${CYAN}Azure Automation Scenarios Lab${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
+# Preflight checks
+missing=0
+for cmd in az terraform git; do
+  if ! command -v "$cmd" &>/dev/null; then
+    echo -e "${RED}Missing required tool: $cmd${NC}"
+    missing=1
+  fi
+done
+if [ "$missing" -eq 1 ]; then
+  echo -e "${YELLOW}Install Azure CLI, Terraform >= 1.9.0, and git, then re-run.${NC}"
+  exit 1
+fi
+
+# Verify az login
+if ! az account show &>/dev/null; then
+  echo -e "${RED}Not logged in to Azure CLI. Run 'az login' first.${NC}"
+  exit 1
+fi
+echo -e "${GREEN}Azure CLI logged in as: $(az account show --query user.name -o tsv)${NC}"
+echo ""
+
 # Clone the repo (or pull latest if already cloned)
 if [ ! -d "azure-automation-lab" ]; then
   echo -e "${CYAN}Cloning repository...${NC}"

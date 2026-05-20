@@ -49,12 +49,6 @@ variable "hybrid_service_url" {
   type        = string
 }
 
-variable "run_test_runbook" {
-  description = "Whether to automatically run the test runbook on hybrid workers after deployment"
-  type        = bool
-  default     = true
-}
-
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)

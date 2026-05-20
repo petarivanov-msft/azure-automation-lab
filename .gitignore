@@ -7,7 +7,6 @@ tfplan
 .DS_Store
 *.tfvars
 !*.tfvars.example
-terraform.tfvars
 *.password
 .vm_admin.password
 apply*.log

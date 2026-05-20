@@ -13,11 +13,6 @@ variable "automation_account_name" {
   type        = string
 }
 
-variable "automation_account_id" {
-  description = "ID of the Automation Account"
-  type        = string
-}
-
 variable "managed_identity_principal_id" {
   description = "Principal ID of the Automation Account managed identity"
   type        = string

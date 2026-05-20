@@ -14,10 +14,7 @@ enable_runbooks       = true
 enable_hybrid_workers = true
 enable_graph_api      = false
 
-# Run the connectivity test runbook automatically after deployment.
-run_test_runbook = true
-
-# Lock down NSG ingress (RDP/WinRM/SSH) to a specific IP or CIDR, e.g.
+# Lock down NSG ingress(RDP/WinRM/SSH) to a specific IP or CIDR, e.g.
 # allowed_source_ip = "203.0.113.4/32"
 # allowed_source_ip = "203.0.113.0/24"
 #

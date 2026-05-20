@@ -1,6 +1,6 @@
 #!/bin/bash
 # Destroy all lab resources.
-# Run from the terraform directory or repo root.
+# Run from the terraform directory, repo root, or scripts/ directory.
 
 set -e
 
@@ -13,18 +13,20 @@ NC='\033[0m'
 echo -e "${CYAN}Azure Automation Lab - Cleanup${NC}"
 echo ""
 
-if [ ! -f "terraform.tfvars" ] && [ ! -f "../terraform/terraform.tfvars" ]; then
-  echo -e "${RED}Error: terraform.tfvars not found.${NC}"
-  echo -e "${YELLOW}Run from the terraform directory or repo root.${NC}"
+# Locate the terraform directory from common invocation points
+if [ -f "terraform.tfstate" ] || [ -f "main.tf" ]; then
+  TERRAFORM_DIR="."
+elif [ -d "terraform" ] && [ -f "terraform/main.tf" ]; then
+  TERRAFORM_DIR="terraform"
+elif [ -d "../terraform" ] && [ -f "../terraform/main.tf" ]; then
+  TERRAFORM_DIR="../terraform"
+else
+  echo -e "${RED}Error: cannot locate the terraform/ directory.${NC}"
+  echo -e "${YELLOW}Run from the repo root, terraform/ directory, or scripts/ directory.${NC}"
   exit 1
 fi
 
-if [ -f "terraform.tfvars" ]; then
-  TERRAFORM_DIR="."
-else
-  TERRAFORM_DIR="../terraform"
-  cd "$TERRAFORM_DIR"
-fi
+cd "$TERRAFORM_DIR"
 
 echo -e "${YELLOW}WARNING: This will destroy all lab resources.${NC}"
 echo ""
