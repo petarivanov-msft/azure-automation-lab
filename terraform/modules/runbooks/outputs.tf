@@ -15,9 +15,9 @@ output "ps51_runbook_ids" {
 output "ps74_runbook_ids" {
   description = "IDs of PowerShell 7.4 runbooks"
   value = {
-    parallel_processing = azurerm_automation_runbook.ps74_parallel_processing.id
-    modern_features     = azurerm_automation_runbook.ps74_modern_features.id
-    resource_report     = azurerm_automation_runbook.ps74_resource_report.id
+    parallel_processing = azapi_resource.ps74_parallel_processing.id
+    modern_features     = azapi_resource.ps74_modern_features.id
+    resource_report     = azapi_resource.ps74_resource_report.id
   }
 }
 
@@ -25,10 +25,10 @@ output "ps74_runbook_ids" {
 output "python_runbook_ids" {
   description = "IDs of Python 3.10 runbooks"
   value = {
-    hello_world        = azurerm_automation_runbook.python_hello_world.id
-    resource_inventory = azurerm_automation_runbook.python_resource_inventory.id
-    vm_management      = azurerm_automation_runbook.python_vm_management.id
-    tag_compliance     = azurerm_automation_runbook.python_tag_compliance.id
+    hello_world        = azapi_resource.python_hello_world.id
+    resource_inventory = azapi_resource.python_resource_inventory.id
+    vm_management      = azapi_resource.python_vm_management.id
+    tag_compliance     = azapi_resource.python_tag_compliance.id
   }
 }
 
@@ -37,12 +37,12 @@ output "all_runbook_names" {
   value = [
     azurerm_automation_runbook.ps51_get_azure_info.name,
     azurerm_automation_runbook.ps51_vm_inventory.name,
-    azurerm_automation_runbook.ps74_parallel_processing.name,
-    azurerm_automation_runbook.ps74_modern_features.name,
-    azurerm_automation_runbook.ps74_resource_report.name,
-    azurerm_automation_runbook.python_hello_world.name,
-    azurerm_automation_runbook.python_resource_inventory.name,
-    azurerm_automation_runbook.python_vm_management.name,
-    azurerm_automation_runbook.python_tag_compliance.name
+    azapi_resource.ps74_parallel_processing.name,
+    azapi_resource.ps74_modern_features.name,
+    azapi_resource.ps74_resource_report.name,
+    azapi_resource.python_hello_world.name,
+    azapi_resource.python_resource_inventory.name,
+    azapi_resource.python_vm_management.name,
+    azapi_resource.python_tag_compliance.name,
   ]
 }
