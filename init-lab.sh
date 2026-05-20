@@ -94,6 +94,30 @@ prompt_input "Enter VM admin username" VM_ADMIN_USERNAME
 
 echo -e "${CYAN}Generating secure password for VMs...${NC}"
 VM_ADMIN_PASSWORD=$(openssl rand -base64 16)
+# Export so Terraform picks it up via TF_VAR_*; we do NOT write the password
+# into terraform.tfvars (avoids leaving a secret on disk in cleartext).
+export TF_VAR_vm_admin_password="$VM_ADMIN_PASSWORD"
+
+echo ""
+echo -e "${CYAN}Network access:${NC}"
+echo -e "  Lock RDP/WinRM/SSH to a specific source IP/CIDR (recommended)."
+echo -e "  Examples: ${YELLOW}203.0.113.4/32${NC} or ${YELLOW}203.0.113.0/24${NC}"
+echo -e "  Type ${YELLOW}*${NC} to open to the public internet (lab-only)."
+ALLOWED_SOURCE_IP=""
+ACK_OPEN_NSG="false"
+while [ -z "$ALLOWED_SOURCE_IP" ]; do
+  echo -en "${CYAN}allowed_source_ip: ${NC}"
+  read -r ALLOWED_SOURCE_IP
+  if [ "$ALLOWED_SOURCE_IP" == "*" ]; then
+    echo -en "${YELLOW}'*' opens RDP/WinRM/SSH to the world. Type 'YES' to confirm: ${NC}"
+    read -r confirm_open
+    if [ "$confirm_open" != "YES" ]; then
+      ALLOWED_SOURCE_IP=""
+    else
+      ACK_OPEN_NSG="true"
+    fi
+  fi
+done
 
 # Scenario selection
 echo ""
@@ -160,7 +184,12 @@ resource_group_name     = "$RESOURCE_GROUP"
 location                = "$LOCATION"
 automation_account_name = "$AUTOMATION_ACCOUNT"
 vm_admin_username       = "$VM_ADMIN_USERNAME"
-vm_admin_password       = "$VM_ADMIN_PASSWORD"
+# vm_admin_password is supplied via the TF_VAR_vm_admin_password env var
+# exported by init-lab.sh; do not write it here.
+
+# Network access
+allowed_source_ip    = "$ALLOWED_SOURCE_IP"
+acknowledge_open_nsg = $ACK_OPEN_NSG
 
 # Scenario toggles
 enable_runbooks        = $ENABLE_RUNBOOKS
@@ -172,13 +201,19 @@ echo -e "${GREEN}Done.${NC}"
 echo ""
 
 if [ -d ".terraform" ]; then
-  echo -e "${CYAN}Cleaning up existing Terraform cache...${NC}"
-  rm -rf .terraform .terraform.lock.hcl
+  echo -e "${CYAN}Re-using existing Terraform cache (.terraform/). Pass --upgrade to refresh providers.${NC}"
 fi
+
+INIT_ARGS=()
+for arg in "$@"; do
+  case "$arg" in
+    --upgrade) INIT_ARGS+=("-upgrade") ;;
+  esac
+done
 
 # Initialize Terraform
 echo -e "${CYAN}Initializing Terraform...${NC}"
-terraform init -upgrade
+terraform init "${INIT_ARGS[@]}"
 
 # Run Terraform plan
 echo ""
@@ -200,7 +235,14 @@ if [[ "$confirm" == "yes" || "$confirm" == "y" || "$confirm" == "Y" ]]; then
   echo -e "${CYAN}Location:${NC} $LOCATION"
   echo -e "${CYAN}Automation Account:${NC} $AUTOMATION_ACCOUNT"
   echo ""
-  echo -e "VM credentials: username=$VM_ADMIN_USERNAME | password saved in terraform.tfvars"
+  echo -e "VM credentials: username=$VM_ADMIN_USERNAME"
+  # Save password to a gitignored file so the user can re-export later
+  # (instead of keeping it inline in terraform.tfvars).
+  PASSWORD_FILE="$(pwd)/.vm_admin.password"
+  printf '%s' "$VM_ADMIN_PASSWORD" > "$PASSWORD_FILE"
+  chmod 600 "$PASSWORD_FILE" 2>/dev/null || true
+  echo -e "VM password saved to: ${YELLOW}$PASSWORD_FILE${NC} (gitignored, chmod 600)"
+  echo -e "Re-export with: ${YELLOW}export TF_VAR_vm_admin_password=\$(cat $PASSWORD_FILE)${NC}"
   echo ""
   echo -e "${CYAN}Outputs:${NC} terraform output"
   echo ""

@@ -25,9 +25,7 @@
 #     - PS 7.2 is in the system-generated list but is EOL (parent PS dropped support).
 #       Docs say 7.4 is recommended. We create a custom PS 7.4 env via azapi.
 #     DECISION: Create a custom "PS74" runtime env via azapi for PS 7.4 runbooks.
-#     Runbooks renamed *-PS72 → *-PS74 to match what they actually use.
-#     (The files on disk are named *-PS72.ps1 for backward compat with existing
-#     test baselines, but the Azure runbook names are *-PS74.)
+#     Runbooks named *-PS74 — file names on disk match (renamed in cleanup pass).
 #
 # [3] azapi_resource syntax (Azure/azapi ~1.x)
 #     Source: https://raw.githubusercontent.com/Azure/terraform-provider-azapi/main/docs/resources/resource.md
@@ -267,10 +265,6 @@ resource "azurerm_automation_runbook" "ps51_vm_inventory" {
 # Using native azurerm + content inline eliminates all local-exec blocks.
 # runbook_type = "PowerShell" + runtime_environment_name = "PS74" → binds to
 # our custom PS 7.4 runtime environment.
-#
-# NOTE: runbook files on disk are named *-PS72.ps1 for backward compat with
-# tester baselines from round 1, but the Azure runbook names are *-PS74 (which
-# is what the portal and az CLI see).
 # ==============================================================================
 
 resource "azurerm_automation_runbook" "ps74_parallel_processing" {
@@ -283,7 +277,7 @@ resource "azurerm_automation_runbook" "ps74_parallel_processing" {
   description              = "PowerShell 7.4 runbook - Demonstrates parallel processing with ForEach-Object -Parallel"
   runbook_type             = "PowerShell"
   runtime_environment_name = "PS74"
-  content                  = file("${path.module}/runbooks/Demo-ParallelProcessing-PS72.ps1")
+  content                  = file("${path.module}/runbooks/Demo-ParallelProcessing-PS74.ps1")
   tags                     = var.tags
 
   depends_on = [azapi_resource.ps74_runtime]
@@ -299,7 +293,7 @@ resource "azurerm_automation_runbook" "ps74_modern_features" {
   description              = "PowerShell 7.4 runbook - Demonstrates ternary operators, null coalescing, and pipeline parallelization"
   runbook_type             = "PowerShell"
   runtime_environment_name = "PS74"
-  content                  = file("${path.module}/runbooks/Demo-ModernFeatures-PS72.ps1")
+  content                  = file("${path.module}/runbooks/Demo-ModernFeatures-PS74.ps1")
   tags                     = var.tags
 
   depends_on = [azapi_resource.ps74_runtime]
@@ -315,7 +309,7 @@ resource "azurerm_automation_runbook" "ps74_resource_report" {
   description              = "PowerShell 7.4 runbook - Generate comprehensive Azure resource report"
   runbook_type             = "PowerShell"
   runtime_environment_name = "PS74"
-  content                  = file("${path.module}/runbooks/Get-ResourceReport-PS72.ps1")
+  content                  = file("${path.module}/runbooks/Get-ResourceReport-PS74.ps1")
   tags                     = var.tags
 
   depends_on = [azapi_resource.ps74_runtime]

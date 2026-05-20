@@ -25,15 +25,23 @@ enable_graph_api      = false
 
 ## Quick Start
 
-Open [Azure Cloud Shell](https://portal.azure.com) (Bash) and run:
+### Cloud Shell / Bash (Linux, macOS, WSL)
 
 ```bash
 bash <(curl -s https://raw.githubusercontent.com/petarivanov-msft/azure-automation-lab/main/init-lab.sh)
 ```
 
-> Note: Use `bash <(curl ...)` — not `curl | bash`. The script needs interactive prompts.
+> Use `bash <(curl ...)` — not `curl | bash`. The script needs interactive prompts.
 
-The script will ask for resource names, region, and which scenarios to deploy, then runs `terraform apply` for you.
+### Windows / PowerShell (PowerShell 5.1, PowerShell 7+, Cloud Shell PowerShell)
+
+```powershell
+iex (iwr -useb https://raw.githubusercontent.com/petarivanov-msft/azure-automation-lab/main/init-lab.ps1).Content
+```
+
+Both scripts ask for resource names, region, NSG source IP, and which scenarios to deploy, then run `terraform apply` for you.
+
+> **Security default:** The NSG ingress rules (RDP / WinRM / SSH) require an explicit source IP/CIDR. To open them to the public internet you must pass `allowed_source_ip = "*"` **and** `acknowledge_open_nsg = true` (or confirm the `YES` prompt in the bootstrap scripts). This avoids accidentally exposing the VMs.
 
 ## What Gets Deployed
 
@@ -64,26 +72,22 @@ The script will ask for resource names, region, and which scenarios to deploy, t
 ```bash
 git clone https://github.com/petarivanov-msft/azure-automation-lab.git
 cd azure-automation-lab/terraform
+
+# Copy the example and edit the values you care about.
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars (especially allowed_source_ip).
+
+# Supply the VM password via an env var — do NOT put it in terraform.tfvars.
+export TF_VAR_vm_admin_password='<a strong password>'
+
 terraform init
-
-cat > terraform.tfvars <<EOF
-resource_group_name     = "rg-automation-lab"
-location                = "uksouth"
-automation_account_name = "auto-lab-12345"
-vm_admin_username       = "azureadmin"
-vm_admin_password       = "<generate-a-strong-password>"
-enable_runbooks         = true
-enable_hybrid_workers   = true
-enable_graph_api        = false
-EOF
-
 terraform apply
 ```
 
-Requirements: Terraform >= 1.3.0, Azure CLI
+Requirements: Terraform >= 1.3.0, Azure CLI (logged in via `az login`), git.
 
-> **Supported deployment environments:** Azure Cloud Shell (Bash), macOS/Linux terminal, Windows (PowerShell or CMD), WSL.
-> No Bash dependency — all local-exec blocks have been eliminated. The Terraform provider handles everything natively.
+> **Supported environments:** Azure Cloud Shell (Bash *or* PowerShell), macOS/Linux terminal, Windows (PowerShell 5.1+ or PowerShell 7+), WSL.
+> Terraform itself has no shell dependency — `init-lab.sh` and `init-lab.ps1` are convenience wrappers around the same `terraform apply`.
 
 ## Running Runbooks
 
@@ -104,7 +108,7 @@ az automation runbook start --automation-account-name $AA --resource-group $RG \
   --name "Test-HybridWorker-ManagedIdentity" --run-on "hybrid-workers-linux"
 ```
 
-> **Note:** After `terraform apply`, allow 5–10 minutes for hybrid workers to fully register before running runbooks on them.
+> **Note:** Hybrid worker registration is awaited automatically during `terraform apply` (a 3-minute `time_sleep` after the extension installs). No manual wait is needed before running the test runbook.
 
 ## Cleanup
 
@@ -112,8 +116,9 @@ az automation runbook start --automation-account-name $AA --resource-group $RG \
 cd terraform
 terraform destroy
 
-# Or use the helper:
-bash scripts/cleanup-lab.sh
+# Or use a helper:
+bash   scripts/cleanup-lab.sh    # bash
+pwsh   scripts/cleanup-lab.ps1   # PowerShell
 ```
 
 ## Repository Layout
@@ -122,6 +127,7 @@ bash scripts/cleanup-lab.sh
 azure-automation-lab/
 ├── terraform/                          Full modular lab
 │   ├── main.tf, variables.tf, outputs.tf, provider.tf
+│   ├── terraform.tfvars.example
 │   └── modules/
 │       ├── automation_account/
 │       ├── hybrid_workers/
@@ -129,16 +135,25 @@ azure-automation-lab/
 │       ├── graph_api/
 │       └── network/
 ├── scripts/
-│   └── cleanup-lab.sh
+│   ├── cleanup-lab.sh
+│   └── cleanup-lab.ps1
 ├── docs/
 │   └── MIGRATION_GUIDE.md
-├── init-lab.sh                          Cloud Shell bootstrap
+├── init-lab.sh                          Cloud Shell / bash bootstrap
+├── init-lab.ps1                         Windows / PowerShell bootstrap
 └── .github/workflows/terraform-ci.yml
 ```
 
 ## Documentation
 
 - [Migration Guide](docs/MIGRATION_GUIDE.md) — for users coming from older revisions
+
+### Breaking changes in this revision
+
+- **Per-VM `Contributor` role assignments removed.** The Automation Account managed identity still gets `Contributor` on the lab RG; the hybrid worker VMs no longer get their own `Contributor` assignments because the bundled runbooks authenticate as the AA MI (`Connect-AzAccount -Identity` on the hybrid worker). If you've added runbooks that call IMDS on the VM directly and rely on the VM's own MI, re-add a targeted role assignment.
+- **PS 7.4 runbook source files renamed** `*-PS72.ps1` → `*-PS74.ps1` (the Azure-side runbook names already had the `-PS74` suffix, so no portal-visible change). First `terraform apply` after pulling this revision will show in-place runbook updates.
+- **VM admin password is no longer written to `terraform.tfvars`** by `init-lab.sh` / `init-lab.ps1`. It's set via the `TF_VAR_vm_admin_password` env var and stashed in a gitignored `.vm_admin.password` file. Re-export it before running `terraform apply` again.
+- **NSG default tightened.** `allowed_source_ip = "*"` now fails validation unless `acknowledge_open_nsg = true` is also set.
 
 ## Resources
 

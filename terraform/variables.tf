@@ -51,9 +51,21 @@ variable "enable_graph_api" {
 }
 
 variable "allowed_source_ip" {
-  description = "Source IP or CIDR allowed for RDP/WinRM/SSH access. Use '*' for any (not recommended for production)."
+  description = "Source IP or CIDR allowed for RDP/WinRM/SSH access. Use '*' for any (not recommended; requires acknowledge_open_nsg = true)."
   type        = string
   default     = "*"
+
+  validation {
+    # Allow a real IP/CIDR; if '*' is used, force the user to opt in via acknowledge_open_nsg.
+    condition     = var.allowed_source_ip != "*" || var.acknowledge_open_nsg
+    error_message = "allowed_source_ip = '*' opens RDP/WinRM/SSH to the public internet. Set acknowledge_open_nsg = true to opt in, or pass a specific IP/CIDR (e.g. \"203.0.113.4/32\")."
+  }
+}
+
+variable "acknowledge_open_nsg" {
+  description = "Set to true to explicitly opt in to allowed_source_ip = '*' (NSG open to internet). Required for unrestricted access; ignored otherwise."
+  type        = bool
+  default     = false
 }
 
 variable "tags" {

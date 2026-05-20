@@ -1,10 +1,6 @@
 # hybrid_service_url is passed in via var.hybrid_service_url (from automation_account module output)
 # No data lookup needed — the AA is created before this module runs.
 
-resource "random_uuid" "worker_id_windows" {}
-resource "random_uuid" "worker_id_ubuntu" {}
-resource "random_uuid" "worker_id_rhel" {}
-
 resource "azurerm_network_interface" "windows" {
   name                = "nic-hw-windows"
   location            = var.location
@@ -160,29 +156,11 @@ resource "azurerm_automation_hybrid_runbook_worker_group" "linux" {
   automation_account_name = var.automation_account_name
 }
 
-resource "azurerm_automation_hybrid_runbook_worker" "windows" {
-  automation_account_name = var.automation_account_name
-  resource_group_name     = var.resource_group_name
-  worker_group_name       = azurerm_automation_hybrid_runbook_worker_group.windows.name
-  vm_resource_id          = azurerm_windows_virtual_machine.windows.id
-  worker_id               = random_uuid.worker_id_windows.result
-}
-
-resource "azurerm_automation_hybrid_runbook_worker" "ubuntu" {
-  automation_account_name = var.automation_account_name
-  resource_group_name     = var.resource_group_name
-  worker_group_name       = azurerm_automation_hybrid_runbook_worker_group.linux.name
-  vm_resource_id          = azurerm_linux_virtual_machine.ubuntu.id
-  worker_id               = random_uuid.worker_id_ubuntu.result
-}
-
-resource "azurerm_automation_hybrid_runbook_worker" "rhel" {
-  automation_account_name = var.automation_account_name
-  resource_group_name     = var.resource_group_name
-  worker_group_name       = azurerm_automation_hybrid_runbook_worker_group.linux.name
-  vm_resource_id          = azurerm_linux_virtual_machine.rhel.id
-  worker_id               = random_uuid.worker_id_rhel.result
-}
+# The HybridWorker extension (v1.1+) self-registers the VM into the named worker
+# group. We deliberately do NOT create azurerm_automation_hybrid_runbook_worker
+# resources alongside it — doing so previously caused duplicate registrations
+# with mismatched worker IDs, since the extension generates its own ID and we
+# never passed our random UUID into protected_settings.HybridWorkerId.
 
 resource "azurerm_virtual_machine_extension" "hybrid_worker_windows" {
   name                       = "HybridWorkerExtension"
@@ -199,8 +177,6 @@ resource "azurerm_virtual_machine_extension" "hybrid_worker_windows" {
   protected_settings = jsonencode({
     HybridWorkerGroupName = azurerm_automation_hybrid_runbook_worker_group.windows.name
   })
-
-  depends_on = [azurerm_automation_hybrid_runbook_worker.windows]
 
   tags = var.tags
 }
@@ -221,8 +197,6 @@ resource "azurerm_virtual_machine_extension" "hybrid_worker_ubuntu" {
     HybridWorkerGroupName = azurerm_automation_hybrid_runbook_worker_group.linux.name
   })
 
-  depends_on = [azurerm_automation_hybrid_runbook_worker.ubuntu]
-
   tags = var.tags
 }
 
@@ -242,37 +216,32 @@ resource "azurerm_virtual_machine_extension" "hybrid_worker_rhel" {
     HybridWorkerGroupName = azurerm_automation_hybrid_runbook_worker_group.linux.name
   })
 
-  depends_on = [azurerm_automation_hybrid_runbook_worker.rhel]
-
   tags = var.tags
 }
 
-# Automation account MI needs Contributor to manage resources via runbooks
+# Give the hybrid worker extension time to register the VM with the AA before
+# downstream consumers (e.g. invoking the test runbook) try to use it. Replaces
+# the manual "wait 5-10 minutes" note in the README.
+resource "time_sleep" "wait_for_worker_registration" {
+  create_duration = "180s"
+
+  depends_on = [
+    azurerm_virtual_machine_extension.hybrid_worker_windows,
+    azurerm_virtual_machine_extension.hybrid_worker_ubuntu,
+    azurerm_virtual_machine_extension.hybrid_worker_rhel,
+  ]
+}
+
+# Automation account MI needs Contributor to manage resources via runbooks.
+# Per-VM MI Contributor grants were dropped in the medium cleanup pass — the
+# bundled runbooks authenticate as the AA MI via Connect-AzAccount -Identity
+# from the hybrid worker, not as the VM's own identity. If you add a runbook
+# that calls Get-AzAccessToken / IMDS on the VM directly, re-add a targeted
+# role assignment scoped only to that runbook's needs.
 resource "azurerm_role_assignment" "automation_contributor" {
   scope                            = var.resource_group_id
   role_definition_name             = "Contributor"
   principal_id                     = var.automation_identity_principal_id
-  skip_service_principal_aad_check = true
-}
-
-resource "azurerm_role_assignment" "vm_windows_contributor" {
-  scope                            = var.resource_group_id
-  role_definition_name             = "Contributor"
-  principal_id                     = azurerm_windows_virtual_machine.windows.identity[0].principal_id
-  skip_service_principal_aad_check = true
-}
-
-resource "azurerm_role_assignment" "vm_ubuntu_contributor" {
-  scope                            = var.resource_group_id
-  role_definition_name             = "Contributor"
-  principal_id                     = azurerm_linux_virtual_machine.ubuntu.identity[0].principal_id
-  skip_service_principal_aad_check = true
-}
-
-resource "azurerm_role_assignment" "vm_rhel_contributor" {
-  scope                            = var.resource_group_id
-  role_definition_name             = "Contributor"
-  principal_id                     = azurerm_linux_virtual_machine.rhel.identity[0].principal_id
   skip_service_principal_aad_check = true
 }
 
@@ -339,42 +308,6 @@ resource "azurerm_automation_runbook" "test_hybrid_worker" {
 
   content = file("${path.module}/runbooks/Test-HybridWorker-ManagedIdentity.ps1")
   tags    = var.tags
-}
 
-# RESEARCH: azurerm_automation_runbook with `content` set publishes automatically.
-# Ref: hashicorp/terraform-provider-azurerm main branch docs (API 2024-10-23).
-# No separate publish step needed — provider handles draft+publish internally.
-# This null_resource kept as a no-op to avoid destroying dependent resources
-# from earlier apply states. Triggers still fire on content change.
-#
-# CROSS-PLATFORM NOTE (tester round 2 bug E): Previous round used bash -c interpreter
-# which breaks on plain Windows (no bash). The azurerm runbook resource above handles
-# publish natively, so no local-exec interpreter is needed here at all.
-resource "null_resource" "publish_test_runbook" {
-  # No provisioner needed: azurerm_automation_runbook with content= auto-publishes.
-  # This resource is kept as a dependency anchor only.
-  depends_on = [azurerm_automation_runbook.test_hybrid_worker]
-
-  triggers = {
-    runbook_content = sha256(file("${path.module}/runbooks/Test-HybridWorker-ManagedIdentity.ps1"))
-  }
-}
-
-# CROSS-PLATFORM NOTE (tester round 2 bug E): Previous deployment summary used
-# bash -c interpreter which breaks on plain Windows. Replaced with terraform output
-# (see outputs.tf). This null_resource is kept as a deployment completion anchor.
-resource "null_resource" "deployment_summary" {
-  # Summary information is now in terraform outputs (cross-platform safe).
-  # See: terraform output deployment_instructions
-
-  depends_on = [
-    null_resource.publish_test_runbook,
-    azurerm_virtual_machine_extension.hybrid_worker_windows,
-    azurerm_virtual_machine_extension.hybrid_worker_ubuntu,
-    azurerm_virtual_machine_extension.hybrid_worker_rhel,
-  ]
-
-  triggers = {
-    always_run = timestamp()
-  }
+  depends_on = [time_sleep.wait_for_worker_registration]
 }

@@ -31,7 +31,7 @@ echo ""
 
 if [ -f "terraform.tfstate" ]; then
   echo -e "${CYAN}Resources in state:${NC}"
-  terraform show -json | jq -r '.values.root_module.resources[].address' 2>/dev/null || echo "  (run terraform plan to see)"
+  terraform state list 2>/dev/null || echo "  (run terraform plan to see)"
   echo ""
 fi
 

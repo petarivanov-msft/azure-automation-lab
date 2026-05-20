@@ -1,0 +1,34 @@
+# Copy to terraform.tfvars and edit. terraform.tfvars is gitignored.
+# Prefer setting vm_admin_password via the TF_VAR_vm_admin_password env var
+# rather than writing it here.
+
+resource_group_name     = "rg-automation-lab"
+location                = "uksouth"
+automation_account_name = "auto-lab-changeme"
+
+vm_admin_username = "azureadmin"
+# vm_admin_password   = "set-via-TF_VAR_vm_admin_password-env-var"
+
+# Scenario toggles
+enable_runbooks       = true
+enable_hybrid_workers = true
+enable_graph_api      = false
+
+# Run the connectivity test runbook automatically after deployment.
+run_test_runbook = true
+
+# Lock down NSG ingress (RDP/WinRM/SSH) to a specific IP or CIDR, e.g.
+# allowed_source_ip = "203.0.113.4/32"
+# allowed_source_ip = "203.0.113.0/24"
+#
+# If you must leave it open to the world for a throw-away lab, set both:
+# allowed_source_ip    = "*"
+# acknowledge_open_nsg = true
+allowed_source_ip    = "*"
+acknowledge_open_nsg = false
+
+tags = {
+  Environment = "Lab"
+  Purpose     = "Azure Automation Scenarios"
+  ManagedBy   = "Terraform"
+}

@@ -53,8 +53,8 @@ To run the connectivity test (Windows workers):
     --name 'Test-HybridWorker-ManagedIdentity' \
     --run-on '${azurerm_automation_hybrid_runbook_worker_group.windows.name}'
 
-Note: Hybrid workers may take 5-10 minutes after VM extension installation
-to fully register with the Automation Account before runbooks can execute.
+Note: Hybrid workers are registered automatically during apply (the module
+waits ~3 minutes after extension install for registration to complete).
   EOT
 }
 
