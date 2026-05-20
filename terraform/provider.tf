@@ -1,17 +1,9 @@
 terraform {
-  required_version = ">= 1.3.0"
+  required_version = ">= 1.9.0"
 
   required_providers {
     azurerm = {
-      source = "hashicorp/azurerm"
-      # Bumped from ~> 3.0 to ~> 4.0 to gain:
-      #   runtime_environment_name on azurerm_automation_runbook (added in 4.59.0)
-      # Breaking change audit vs 3.x:
-      #   azurerm_automation_account: removed deprecated encryption.key_source (not used here)
-      #   azurerm_automation_runbook: no breaking changes
-      #   azurerm_automation_module: no breaking changes
-      #   azurerm_automation_hybrid_runbook_worker: no breaking changes
-      # Safe to bump. See: hashicorp/terraform-provider-azurerm CHANGELOG + 4.0 upgrade guide.
+      source  = "hashicorp/azurerm"
       version = "~> 4.0"
     }
     azuread = {
@@ -24,7 +16,7 @@ terraform {
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.0"
+      version = "~> 3.6"
     }
     time = {
       source  = "hashicorp/time"
