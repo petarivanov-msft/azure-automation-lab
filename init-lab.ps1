@@ -72,7 +72,7 @@ Write-Host ''
 foreach ($tool in 'az','terraform','git') {
   if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
     Write-Err2 "Required tool not found on PATH: $tool"
-    Write-Err2 'Install Azure CLI, Terraform >= 1.3.0, and git, then re-run.'
+    Write-Err2 'Install Azure CLI, Terraform >= 1.9.0, and git, then re-run.'
     exit 1
   }
 }

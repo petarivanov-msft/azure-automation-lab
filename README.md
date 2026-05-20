@@ -84,7 +84,7 @@ terraform init
 terraform apply
 ```
 
-Requirements: Terraform >= 1.3.0, Azure CLI (logged in via `az login`), git.
+Requirements: Terraform >= 1.9.0, Azure CLI (logged in via `az login`), git.
 
 > **Supported environments:** Azure Cloud Shell (Bash *or* PowerShell), macOS/Linux terminal, Windows (PowerShell 5.1+ or PowerShell 7+), WSL.
 > Terraform itself has no shell dependency — `init-lab.sh` and `init-lab.ps1` are convenience wrappers around the same `terraform apply`.
@@ -150,7 +150,7 @@ azure-automation-lab/
 
 ### Breaking changes in this revision
 
-- **Per-VM `Contributor` role assignments removed.** The Automation Account managed identity still gets `Contributor` on the lab RG; the hybrid worker VMs no longer get their own `Contributor` assignments because the bundled runbooks authenticate as the AA MI (`Connect-AzAccount -Identity` on the hybrid worker). If you've added runbooks that call IMDS on the VM directly and rely on the VM's own MI, re-add a targeted role assignment.
+- **Per-VM `Contributor` role assignments removed.** The Automation Account managed identity still gets `Contributor` on the lab RG. The hybrid worker VMs now get `Automation Contributor` scoped only to the Automation Account (needed for HRW v2 extension registration) instead of the previous broad `Contributor` on the whole RG. If you've added runbooks that call IMDS on the VM directly and rely on the VM's own MI for resource management, add a targeted role assignment.
 - **PS 7.4 runbook source files renamed** `*-PS72.ps1` → `*-PS74.ps1` (the Azure-side runbook names already had the `-PS74` suffix, so no portal-visible change). First `terraform apply` after pulling this revision will show in-place runbook updates.
 - **VM admin password is no longer written to `terraform.tfvars`** by `init-lab.sh` / `init-lab.ps1`. It's set via the `TF_VAR_vm_admin_password` env var and stashed in a gitignored `.vm_admin.password` file. Re-export it before running `terraform apply` again.
 - **NSG default tightened.** `allowed_source_ip = "*"` now fails validation unless `acknowledge_open_nsg = true` is also set.
