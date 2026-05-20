@@ -17,3 +17,8 @@ output "managed_identity_tenant_id" {
   description = "Tenant ID of the managed identity"
   value       = azurerm_automation_account.main.identity[0].tenant_id
 }
+
+output "hybrid_service_url" {
+  description = "Hybrid service URL for registering hybrid workers"
+  value       = azurerm_automation_account.main.hybrid_service_url
+}

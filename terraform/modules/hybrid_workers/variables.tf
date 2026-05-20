@@ -44,6 +44,11 @@ variable "resource_group_id" {
   type        = string
 }
 
+variable "hybrid_service_url" {
+  description = "Hybrid service URL from the Automation Account resource"
+  type        = string
+}
+
 variable "run_test_runbook" {
   description = "Whether to automatically run the test runbook on hybrid workers after deployment"
   type        = bool

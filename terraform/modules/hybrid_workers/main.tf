@@ -1,7 +1,5 @@
-data "azurerm_automation_account" "main" {
-  name                = var.automation_account_name
-  resource_group_name = var.resource_group_name
-}
+# hybrid_service_url is passed in via var.hybrid_service_url (from automation_account module output)
+# No data lookup needed — the AA is created before this module runs.
 
 resource "random_uuid" "worker_id_windows" {}
 resource "random_uuid" "worker_id_ubuntu" {}
@@ -195,7 +193,7 @@ resource "azurerm_virtual_machine_extension" "hybrid_worker_windows" {
   auto_upgrade_minor_version = true
 
   settings = jsonencode({
-    AutomationAccountURL = data.azurerm_automation_account.main.hybrid_service_url
+    AutomationAccountURL = var.hybrid_service_url
   })
 
   protected_settings = jsonencode({
@@ -216,7 +214,7 @@ resource "azurerm_virtual_machine_extension" "hybrid_worker_ubuntu" {
   auto_upgrade_minor_version = true
 
   settings = jsonencode({
-    AutomationAccountURL = data.azurerm_automation_account.main.hybrid_service_url
+    AutomationAccountURL = var.hybrid_service_url
   })
 
   protected_settings = jsonencode({
@@ -237,7 +235,7 @@ resource "azurerm_virtual_machine_extension" "hybrid_worker_rhel" {
   auto_upgrade_minor_version = true
 
   settings = jsonencode({
-    AutomationAccountURL = data.azurerm_automation_account.main.hybrid_service_url
+    AutomationAccountURL = var.hybrid_service_url
   })
 
   protected_settings = jsonencode({

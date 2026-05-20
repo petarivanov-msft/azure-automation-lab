@@ -54,6 +54,7 @@ module "hybrid_workers" {
   automation_account_id            = module.automation_account.automation_account_id
   automation_account_name          = module.automation_account.automation_account_name
   automation_identity_principal_id = module.automation_account.managed_identity_principal_id
+  hybrid_service_url               = module.automation_account.hybrid_service_url
   resource_group_id                = azurerm_resource_group.main.id
   subnet_id                        = module.network[0].subnet_id
   vm_admin_username                = var.vm_admin_username
