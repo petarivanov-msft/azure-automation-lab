@@ -10,3 +10,4 @@ tfplan
 terraform.tfvars
 *.password
 .vm_admin.password
+apply*.log
