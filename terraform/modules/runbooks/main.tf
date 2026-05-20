@@ -331,7 +331,7 @@ resource "azurerm_automation_runbook" "python_hello_world" {
   log_verbose              = true
   log_progress             = true
   description              = "Python 3.10 runbook - Hello World"
-  runbook_type             = "Python3"
+  runbook_type             = "Python"
   runtime_environment_name = "Python310"
   content                  = file("${path.module}/runbooks/hello_world.py")
   tags                     = var.tags
@@ -347,7 +347,7 @@ resource "azurerm_automation_runbook" "python_resource_inventory" {
   log_verbose              = true
   log_progress             = true
   description              = "Python 3.10 runbook - Get Azure resource inventory"
-  runbook_type             = "Python3"
+  runbook_type             = "Python"
   runtime_environment_name = "Python310"
   content                  = file("${path.module}/runbooks/get_resource_inventory.py")
   tags                     = var.tags
@@ -363,7 +363,7 @@ resource "azurerm_automation_runbook" "python_vm_management" {
   log_verbose              = true
   log_progress             = true
   description              = "Python 3.10 runbook - Start/Stop VMs using Azure SDK"
-  runbook_type             = "Python3"
+  runbook_type             = "Python"
   runtime_environment_name = "Python310"
   content                  = file("${path.module}/runbooks/manage_vms.py")
   tags                     = var.tags
@@ -379,7 +379,7 @@ resource "azurerm_automation_runbook" "python_tag_compliance" {
   log_verbose              = true
   log_progress             = true
   description              = "Python 3.10 runbook - Check resource tag compliance"
-  runbook_type             = "Python3"
+  runbook_type             = "Python"
   runtime_environment_name = "Python310"
   content                  = file("${path.module}/runbooks/check_tag_compliance.py")
   tags                     = var.tags

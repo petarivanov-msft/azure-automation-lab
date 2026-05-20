@@ -156,11 +156,51 @@ resource "azurerm_automation_hybrid_runbook_worker_group" "linux" {
   automation_account_name = var.automation_account_name
 }
 
-# The HybridWorker extension (v1.1+) self-registers the VM into the named worker
-# group. We deliberately do NOT create azurerm_automation_hybrid_runbook_worker
-# resources alongside it — doing so previously caused duplicate registrations
-# with mismatched worker IDs, since the extension generates its own ID and we
-# never passed our random UUID into protected_settings.HybridWorkerId.
+# Pre-register each VM as a hybrid worker in the AA. The extension (especially
+# v1.3+, which auto_upgrade_minor_version pulls in) expects this registration
+# to exist before it connects. The worker_id is a random UUID generated once
+# and stored in state.
+resource "random_uuid" "worker_windows" {}
+resource "random_uuid" "worker_ubuntu" {}
+resource "random_uuid" "worker_rhel" {}
+
+resource "azurerm_automation_hybrid_runbook_worker" "windows" {
+  resource_group_name     = var.resource_group_name
+  automation_account_name = var.automation_account_name
+  worker_group_name       = azurerm_automation_hybrid_runbook_worker_group.windows.name
+  vm_resource_id          = azurerm_windows_virtual_machine.windows.id
+  worker_id               = random_uuid.worker_windows.result
+}
+
+resource "azurerm_automation_hybrid_runbook_worker" "ubuntu" {
+  resource_group_name     = var.resource_group_name
+  automation_account_name = var.automation_account_name
+  worker_group_name       = azurerm_automation_hybrid_runbook_worker_group.linux.name
+  vm_resource_id          = azurerm_linux_virtual_machine.ubuntu.id
+  worker_id               = random_uuid.worker_ubuntu.result
+}
+
+resource "azurerm_automation_hybrid_runbook_worker" "rhel" {
+  resource_group_name     = var.resource_group_name
+  automation_account_name = var.automation_account_name
+  worker_group_name       = azurerm_automation_hybrid_runbook_worker_group.linux.name
+  vm_resource_id          = azurerm_linux_virtual_machine.rhel.id
+  worker_id               = random_uuid.worker_rhel.result
+}
+
+# Allow RBAC propagation time before extensions attempt registration.
+resource "time_sleep" "wait_for_rbac" {
+  create_duration = "60s"
+
+  depends_on = [
+    azurerm_role_assignment.vm_windows_aa,
+    azurerm_role_assignment.vm_ubuntu_aa,
+    azurerm_role_assignment.vm_rhel_aa,
+    azurerm_automation_hybrid_runbook_worker.windows,
+    azurerm_automation_hybrid_runbook_worker.ubuntu,
+    azurerm_automation_hybrid_runbook_worker.rhel,
+  ]
+}
 
 resource "azurerm_virtual_machine_extension" "hybrid_worker_windows" {
   name                       = "HybridWorkerExtension"
@@ -179,6 +219,8 @@ resource "azurerm_virtual_machine_extension" "hybrid_worker_windows" {
   })
 
   tags = var.tags
+
+  depends_on = [time_sleep.wait_for_rbac]
 }
 
 resource "azurerm_virtual_machine_extension" "hybrid_worker_ubuntu" {
@@ -198,6 +240,8 @@ resource "azurerm_virtual_machine_extension" "hybrid_worker_ubuntu" {
   })
 
   tags = var.tags
+
+  depends_on = [time_sleep.wait_for_rbac]
 }
 
 resource "azurerm_virtual_machine_extension" "hybrid_worker_rhel" {
@@ -217,6 +261,8 @@ resource "azurerm_virtual_machine_extension" "hybrid_worker_rhel" {
   })
 
   tags = var.tags
+
+  depends_on = [time_sleep.wait_for_rbac]
 }
 
 # Give the hybrid worker extension time to register the VM with the AA before
@@ -233,16 +279,33 @@ resource "time_sleep" "wait_for_worker_registration" {
 }
 
 # Automation account MI needs Contributor to manage resources via runbooks.
-# Per-VM MI Contributor grants were dropped in the medium cleanup pass — the
-# bundled runbooks authenticate as the AA MI via Connect-AzAccount -Identity
-# from the hybrid worker, not as the VM's own identity. If you add a runbook
-# that calls Get-AzAccessToken / IMDS on the VM directly, re-add a targeted
-# role assignment scoped only to that runbook's needs.
 resource "azurerm_role_assignment" "automation_contributor" {
   scope                            = var.resource_group_id
   role_definition_name             = "Contributor"
   principal_id                     = var.automation_identity_principal_id
   skip_service_principal_aad_check = true
+}
+
+# The HybridWorker v2 extension uses the VM's system-assigned MI to call the
+# Automation Account JRDS endpoint and register itself as a worker. The MI
+# needs hybridRunbookWorkers/read+write on the AA — "Automation Contributor"
+# is the narrowest built-in role that grants this.
+resource "azurerm_role_assignment" "vm_windows_aa" {
+  scope                = var.automation_account_id
+  role_definition_name = "Automation Contributor"
+  principal_id         = azurerm_windows_virtual_machine.windows.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "vm_ubuntu_aa" {
+  scope                = var.automation_account_id
+  role_definition_name = "Automation Contributor"
+  principal_id         = azurerm_linux_virtual_machine.ubuntu.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "vm_rhel_aa" {
+  scope                = var.automation_account_id
+  role_definition_name = "Automation Contributor"
+  principal_id         = azurerm_linux_virtual_machine.rhel.identity[0].principal_id
 }
 
 resource "azurerm_virtual_machine_extension" "windows_powershell_modules" {
