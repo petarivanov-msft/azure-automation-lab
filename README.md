@@ -43,8 +43,11 @@ The script will ask for resource names, region, and which scenarios to deploy, t
 
 **Runbooks module** (`enable_runbooks = true`):
 - `Get-AzureInfo-PS51` / `Get-VMInventory-PS51` — PS 5.1
-- `Demo-ParallelProcessing-PS74` / `Demo-ModernFeatures-PS74` / `Get-ResourceReport-PS74` — PS 7.4 (runtime environment bound)
-- `Hello-World-Python` / `Get-ResourceInventory-Python` / `Manage-VMs-Python` / `Check-TagCompliance-Python` — Python 3.10 (runtime environment bound)
+- `Demo-ParallelProcessing-PS74` / `Demo-ModernFeatures-PS74` / `Get-ResourceReport-PS74` — PS 7.4 (custom runtime environment `PS74`)
+- `Hello-World-Python` / `Get-ResourceInventory-Python` / `Manage-VMs-Python` / `Check-TagCompliance-Python` — Python 3.10 (custom runtime environment `Python310`)
+
+> **Runtime Environments:** Azure Automation system-generated envs cover PS-5.1, PS-7.1, PS-7.2, Python-2.7, Python-3.8, Python-3.10.
+> PS-7.4 has **no** system-generated env — a custom `PS74` env is created by Terraform.
 
 **Hybrid Workers module** (`enable_hybrid_workers = true`):
 - 3 VMs: Windows Server 2022, Ubuntu 22.04, RHEL 9
@@ -77,7 +80,10 @@ EOF
 terraform apply
 ```
 
-Requirements: Terraform >= 1.3.0, Azure CLI, Bash
+Requirements: Terraform >= 1.3.0, Azure CLI
+
+> **Supported deployment environments:** Azure Cloud Shell (Bash), macOS/Linux terminal, Windows (PowerShell or CMD), WSL.
+> No Bash dependency — all local-exec blocks have been eliminated. The Terraform provider handles everything natively.
 
 ## Running Runbooks
 

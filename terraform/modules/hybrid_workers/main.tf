@@ -341,31 +341,18 @@ resource "azurerm_automation_runbook" "test_hybrid_worker" {
   tags    = var.tags
 }
 
-# Publish the test runbook on content changes (bash - no PowerShell dependency)
+# RESEARCH: azurerm_automation_runbook with `content` set publishes automatically.
+# Ref: hashicorp/terraform-provider-azurerm main branch docs (API 2024-10-23).
+# No separate publish step needed — provider handles draft+publish internally.
+# This null_resource kept as a no-op to avoid destroying dependent resources
+# from earlier apply states. Triggers still fire on content change.
+#
+# CROSS-PLATFORM NOTE (tester round 2 bug E): Previous round used bash -c interpreter
+# which breaks on plain Windows (no bash). The azurerm runbook resource above handles
+# publish natively, so no local-exec interpreter is needed here at all.
 resource "null_resource" "publish_test_runbook" {
-  provisioner "local-exec" {
-    interpreter = ["bash", "-c"]
-    command     = <<-EOT
-      set -e
-      state=$(az automation runbook show \
-        --automation-account-name '${var.automation_account_name}' \
-        --resource-group '${var.resource_group_name}' \
-        --name 'Test-HybridWorker-ManagedIdentity' \
-        --query state -o tsv 2>/dev/null || echo "")
-
-      if [ "$state" != "Published" ]; then
-        echo "Publishing Test-HybridWorker-ManagedIdentity..."
-        az automation runbook publish \
-          --automation-account-name '${var.automation_account_name}' \
-          --resource-group '${var.resource_group_name}' \
-          --name 'Test-HybridWorker-ManagedIdentity'
-        echo "Runbook published."
-      else
-        echo "Runbook already published."
-      fi
-    EOT
-  }
-
+  # No provisioner needed: azurerm_automation_runbook with content= auto-publishes.
+  # This resource is kept as a dependency anchor only.
   depends_on = [azurerm_automation_runbook.test_hybrid_worker]
 
   triggers = {
@@ -373,28 +360,12 @@ resource "null_resource" "publish_test_runbook" {
   }
 }
 
-# Deployment summary (bash, no PowerShell, no WinGet feedback predictor crashes)
+# CROSS-PLATFORM NOTE (tester round 2 bug E): Previous deployment summary used
+# bash -c interpreter which breaks on plain Windows. Replaced with terraform output
+# (see outputs.tf). This null_resource is kept as a deployment completion anchor.
 resource "null_resource" "deployment_summary" {
-  provisioner "local-exec" {
-    interpreter = ["bash", "-c"]
-    command     = <<-EOT
-      echo ""
-      echo "=== Hybrid Worker Deployment Complete ==="
-      echo "Automation Account : ${var.automation_account_name}"
-      echo "Resource Group     : ${var.resource_group_name}"
-      echo "Worker groups      : ${azurerm_automation_hybrid_runbook_worker_group.windows.name}, ${azurerm_automation_hybrid_runbook_worker_group.linux.name}"
-      echo ""
-      echo "To run the connectivity test manually:"
-      echo "  az automation runbook start \\"
-      echo "    --automation-account-name '${var.automation_account_name}' \\"
-      echo "    --resource-group '${var.resource_group_name}' \\"
-      echo "    --name 'Test-HybridWorker-ManagedIdentity' \\"
-      echo "    --run-on '${azurerm_automation_hybrid_runbook_worker_group.windows.name}'"
-      echo ""
-      echo "Note: Hybrid workers may take 5-10 minutes after VM extension installation"
-      echo "to fully register with the Automation Account before runbooks can execute."
-    EOT
-  }
+  # Summary information is now in terraform outputs (cross-platform safe).
+  # See: terraform output deployment_instructions
 
   depends_on = [
     null_resource.publish_test_runbook,
