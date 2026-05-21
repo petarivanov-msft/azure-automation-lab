@@ -3,6 +3,8 @@ data "azuread_service_principal" "msgraph" {
 }
 
 resource "azurerm_automation_module" "graph_authentication" {
+  count = var.skip_graph_permissions ? 0 : 1
+
   name                    = "Microsoft.Graph.Authentication"
   resource_group_name     = var.resource_group_name
   automation_account_name = var.automation_account_name
@@ -13,6 +15,8 @@ resource "azurerm_automation_module" "graph_authentication" {
 }
 
 resource "azurerm_automation_module" "graph_users" {
+  count = var.skip_graph_permissions ? 0 : 1
+
   name                    = "Microsoft.Graph.Users"
   resource_group_name     = var.resource_group_name
   automation_account_name = var.automation_account_name
@@ -25,6 +29,8 @@ resource "azurerm_automation_module" "graph_users" {
 }
 
 resource "azurerm_automation_module" "graph_groups" {
+  count = var.skip_graph_permissions ? 0 : 1
+
   name                    = "Microsoft.Graph.Groups"
   resource_group_name     = var.resource_group_name
   automation_account_name = var.automation_account_name
@@ -37,6 +43,8 @@ resource "azurerm_automation_module" "graph_groups" {
 }
 
 resource "azurerm_automation_module" "graph_applications" {
+  count = var.skip_graph_permissions ? 0 : 1
+
   name                    = "Microsoft.Graph.Applications"
   resource_group_name     = var.resource_group_name
   automation_account_name = var.automation_account_name
@@ -83,6 +91,10 @@ resource "azuread_app_role_assignment" "graph_directory_read" {
   resource_object_id  = data.azuread_service_principal.msgraph.object_id
 }
 
+# Graph API runbooks are always deployed (they're just PS scripts). Without
+# the Graph modules and permissions they won't run successfully, but having
+# them deployed means a user with admin rights can grant permissions later
+# and immediately use the runbooks.
 resource "azurerm_automation_runbook" "get_users" {
   name                    = "Get-UsersReport"
   location                = var.location
@@ -94,12 +106,6 @@ resource "azurerm_automation_runbook" "get_users" {
 
   content = file("${path.module}/runbooks/Get-UsersReport.ps1")
   tags    = var.tags
-
-  depends_on = [
-    azurerm_automation_module.graph_authentication,
-    azurerm_automation_module.graph_users,
-    azuread_app_role_assignment.graph_users_read
-  ]
 }
 
 resource "azurerm_automation_runbook" "get_groups" {
@@ -113,12 +119,6 @@ resource "azurerm_automation_runbook" "get_groups" {
 
   content = file("${path.module}/runbooks/Get-GroupsReport.ps1")
   tags    = var.tags
-
-  depends_on = [
-    azurerm_automation_module.graph_authentication,
-    azurerm_automation_module.graph_groups,
-    azuread_app_role_assignment.graph_groups_read
-  ]
 }
 
 resource "azurerm_automation_runbook" "get_applications" {
@@ -132,10 +132,4 @@ resource "azurerm_automation_runbook" "get_applications" {
 
   content = file("${path.module}/runbooks/Get-ApplicationsReport.ps1")
   tags    = var.tags
-
-  depends_on = [
-    azurerm_automation_module.graph_authentication,
-    azurerm_automation_module.graph_applications,
-    azuread_app_role_assignment.graph_applications_read
-  ]
 }

@@ -8,18 +8,13 @@ output "runbook_names" {
 }
 
 output "module_names" {
-  description = "Names of installed Graph modules"
-  value = [
-    azurerm_automation_module.graph_authentication.name,
-    azurerm_automation_module.graph_users.name,
-    azurerm_automation_module.graph_groups.name,
-    azurerm_automation_module.graph_applications.name
-  ]
+  description = "Names of installed Graph modules (empty when skip_graph_permissions = true)"
+  value       = [for m in azurerm_automation_module.graph_authentication : m.name]
 }
 
 output "permissions_granted" {
   description = "Graph API permissions granted to managed identity"
-  value = [
+  value = var.skip_graph_permissions ? [] : [
     "User.Read.All",
     "Group.Read.All",
     "Application.Read.All",

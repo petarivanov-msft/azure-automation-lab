@@ -130,11 +130,10 @@ echo -e "  Type ${YELLOW}*${NC} to open to the public internet (lab-only)."
 ALLOWED_SOURCE_IP=""
 ACK_OPEN_NSG="false"
 while [ -z "$ALLOWED_SOURCE_IP" ]; do
-  echo -en "${CYAN}allowed_source_ip: ${NC}"
-  read -r ALLOWED_SOURCE_IP
+  prompt_input "allowed_source_ip" ALLOWED_SOURCE_IP
   if [ "$ALLOWED_SOURCE_IP" == "*" ]; then
     echo -en "${YELLOW}'*' opens RDP/WinRM/SSH to the world. Type 'YES' to confirm: ${NC}"
-    read -r confirm_open
+    read -r confirm_open </dev/tty
     if [ "$confirm_open" != "YES" ]; then
       ALLOWED_SOURCE_IP=""
     else
