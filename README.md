@@ -28,10 +28,8 @@ enable_graph_api      = false
 ### Cloud Shell / Bash (Linux, macOS, WSL)
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/petarivanov-msft/azure-automation-lab/main/init-lab.sh)
+curl -sO https://raw.githubusercontent.com/petarivanov-msft/azure-automation-lab/main/init-lab.sh && bash init-lab.sh
 ```
-
-> Use `bash <(curl ...)` — not `curl | bash`. The script needs interactive prompts.
 
 ### Windows / PowerShell (PowerShell 5.1, PowerShell 7+, Cloud Shell PowerShell)
 

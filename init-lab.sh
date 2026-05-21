@@ -1,7 +1,6 @@
 #!/bin/bash
 # Azure Automation Scenarios Lab - init script
-# Usage: bash <(curl -s https://raw.githubusercontent.com/petarivanov-msft/azure-automation-lab/main/init-lab.sh)
-# Note: use bash <(curl ...) not curl | bash - script needs interactive prompts
+# Usage: curl -sO https://raw.githubusercontent.com/petarivanov-msft/azure-automation-lab/main/init-lab.sh && bash init-lab.sh
 
 set -e
 
@@ -39,14 +38,14 @@ prompt_input() {
   
   if [ -n "$current_value" ]; then
     echo -en "${CYAN}$prompt_msg ${YELLOW}[$current_value]${CYAN}: ${NC}"
-    read -r input </dev/tty
+    read -r input
     if [ -n "$input" ]; then
       printf -v "$var_name" '%s' "$input"
     fi
   else
     while [ -z "${!var_name}" ]; do
       echo -en "${CYAN}$prompt_msg: ${NC}"
-      read -r input </dev/tty
+      read -r input
       printf -v "$var_name" '%s' "$input"
     done
   fi
@@ -133,7 +132,7 @@ while [ -z "$ALLOWED_SOURCE_IP" ]; do
   prompt_input "allowed_source_ip" ALLOWED_SOURCE_IP
   if [ "$ALLOWED_SOURCE_IP" == "*" ]; then
     echo -en "${YELLOW}'*' opens RDP/WinRM/SSH to the world. Type 'YES' to confirm: ${NC}"
-    read -r confirm_open </dev/tty
+    read -r confirm_open
     if [ "$confirm_open" != "YES" ]; then
       ALLOWED_SOURCE_IP=""
     else
@@ -155,7 +154,7 @@ echo -e "  ${RED}n${NC}) Deploy NONE (core Automation Account only)"
 echo ""
 echo -e "${CYAN}Enter choice (comma-separated for multiple, e.g., 1,2 or 'a' for all):${NC}"
 echo -en "${CYAN}Selection [a]: ${NC}"
-read -r scenario_choice </dev/tty
+read -r scenario_choice
 scenario_choice=${scenario_choice:-a}
 
 # Initialize all to false
@@ -252,7 +251,7 @@ terraform plan -out=tfplan
 # Apply Terraform
 echo ""
 echo -en "${YELLOW}Deploy the lab environment? (yes/no): ${NC}"
-read -r confirm </dev/tty
+read -r confirm
 if [[ "$confirm" == "yes" || "$confirm" == "y" || "$confirm" == "Y" ]]; then
   echo -e "${CYAN}Deploying...${NC}"
   echo -e "${YELLOW}This will take approximately 15-25 minutes...${NC}"
