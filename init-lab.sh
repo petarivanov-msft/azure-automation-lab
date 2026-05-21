@@ -39,14 +39,14 @@ prompt_input() {
   
   if [ -n "$current_value" ]; then
     echo -en "${CYAN}$prompt_msg ${YELLOW}[$current_value]${CYAN}: ${NC}"
-    read -r input
+    read -r input </dev/tty
     if [ -n "$input" ]; then
       printf -v "$var_name" '%s' "$input"
     fi
   else
     while [ -z "${!var_name}" ]; do
       echo -en "${CYAN}$prompt_msg: ${NC}"
-      read -r input
+      read -r input </dev/tty
       printf -v "$var_name" '%s' "$input"
     done
   fi
@@ -154,7 +154,8 @@ echo -e "  ${GREEN}a${NC}) Deploy ALL scenarios"
 echo -e "  ${RED}n${NC}) Deploy NONE (core Automation Account only)"
 echo ""
 echo -e "${CYAN}Enter choice (comma-separated for multiple, e.g., 1,2 or 'a' for all):${NC}"
-read -rp "$(echo -e "${CYAN}Selection [a]: ${NC}")" scenario_choice
+echo -en "${CYAN}Selection [a]: ${NC}"
+read -r scenario_choice </dev/tty
 scenario_choice=${scenario_choice:-a}
 
 # Initialize all to false
@@ -245,7 +246,8 @@ terraform plan -out=tfplan
 
 # Apply Terraform
 echo ""
-read -rp "$(echo -e "${YELLOW}Deploy the lab environment? (yes/no): ${NC}")" confirm
+echo -en "${YELLOW}Deploy the lab environment? (yes/no): ${NC}"
+read -r confirm </dev/tty
 if [[ "$confirm" == "yes" || "$confirm" == "y" || "$confirm" == "Y" ]]; then
   echo -e "${CYAN}Deploying...${NC}"
   echo -e "${YELLOW}This will take approximately 15-25 minutes...${NC}"

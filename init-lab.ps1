@@ -241,7 +241,9 @@ try {
 Write-Host ''
 Write-Ok 'Deployment complete.'
 Write-Host ''
-Write-Info "Resource Group     : $ResourceGroup"
+$ActualRG = terraform output -raw resource_group_name 2>$null
+if (-not $ActualRG) { $ActualRG = $ResourceGroup }
+Write-Info "Resource Group     : $ActualRG"
 Write-Info "Location           : $Location"
 Write-Info "Automation Account : $AutomationAccount"
 Write-Host ''
