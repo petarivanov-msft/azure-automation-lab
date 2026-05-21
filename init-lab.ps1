@@ -199,6 +199,21 @@ enable_graph_api      = $EnableGraphApi
 "@
 $tfvars | Set-Content -Path 'terraform.tfvars' -Encoding utf8
 
+# Save password early so it survives Ctrl+C interruptions.
+$passwordFile = Join-Path (Get-Location) '.vm_admin.password'
+$VmAdminPassword | Set-Content -Path $passwordFile -NoNewline -Encoding ascii
+try {
+  $acl = Get-Acl $passwordFile
+  $acl.SetAccessRuleProtection($true, $false)
+  $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    [System.Security.Principal.WindowsIdentity]::GetCurrent().Name,
+    'FullControl','Allow')
+  $acl.AddAccessRule($rule)
+  Set-Acl -Path $passwordFile -AclObject $acl
+} catch {
+  # ACL hardening only works on Windows; ignore on Linux/macOS.
+}
+
 Write-Info 'Initializing Terraform...'
 $initArgs = @()
 if ($Upgrade) { $initArgs += '-upgrade' }
@@ -222,21 +237,6 @@ Write-Info 'Deploying...'
 Write-Warn2 'This will take approximately 15-25 minutes...'
 terraform apply tfplan
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-# Persist password to a gitignored file for re-export.
-$passwordFile = Join-Path (Get-Location) '.vm_admin.password'
-$VmAdminPassword | Set-Content -Path $passwordFile -NoNewline -Encoding ascii
-try {
-  $acl = Get-Acl $passwordFile
-  $acl.SetAccessRuleProtection($true, $false)
-  $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-    [System.Security.Principal.WindowsIdentity]::GetCurrent().Name,
-    'FullControl','Allow')
-  $acl.AddAccessRule($rule)
-  Set-Acl -Path $passwordFile -AclObject $acl
-} catch {
-  # ACL hardening only works on Windows; ignore on Linux/macOS.
-}
 
 Write-Host ''
 Write-Ok 'Deployment complete.'

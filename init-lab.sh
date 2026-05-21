@@ -118,9 +118,9 @@ echo -e "${CYAN}Generating secure password for VMs...${NC}"
 # Generate a password that meets Azure complexity requirements:
 # 12+ chars, uppercase, lowercase, digit, special character.
 VM_ADMIN_PASSWORD="$(openssl rand -base64 12)$(openssl rand -hex 2)!Aa"
-# Export so Terraform picks it up via TF_VAR_*; we do NOT write the password
-# into terraform.tfvars (avoids leaving a secret on disk in cleartext).
 export TF_VAR_vm_admin_password="$VM_ADMIN_PASSWORD"
+# Persist password early so it survives script interruptions.
+# The file is written inside terraform/ (gitignored) for easy re-export.
 
 echo ""
 echo -e "${CYAN}Network access:${NC}"
@@ -224,6 +224,11 @@ EOF
 echo -e "${GREEN}Done.${NC}"
 echo ""
 
+# Save password to a gitignored file right away so it survives Ctrl+C.
+PASSWORD_FILE="$(pwd)/.vm_admin.password"
+printf '%s' "$VM_ADMIN_PASSWORD" > "$PASSWORD_FILE"
+chmod 600 "$PASSWORD_FILE" 2>/dev/null || true
+
 if [ -d ".terraform" ]; then
   echo -e "${CYAN}Re-using existing Terraform cache (.terraform/). Pass --upgrade to refresh providers.${NC}"
 fi
@@ -262,11 +267,6 @@ if [[ "$confirm" == "yes" || "$confirm" == "y" || "$confirm" == "Y" ]]; then
   echo -e "${CYAN}Automation Account:${NC} $AUTOMATION_ACCOUNT"
   echo ""
   echo -e "VM credentials: username=$VM_ADMIN_USERNAME"
-  # Save password to a gitignored file so the user can re-export later
-  # (instead of keeping it inline in terraform.tfvars).
-  PASSWORD_FILE="$(pwd)/.vm_admin.password"
-  printf '%s' "$VM_ADMIN_PASSWORD" > "$PASSWORD_FILE"
-  chmod 600 "$PASSWORD_FILE" 2>/dev/null || true
   echo -e "VM password saved to: ${YELLOW}$PASSWORD_FILE${NC} (gitignored, chmod 600)"
   echo -e "Re-export with: ${YELLOW}export TF_VAR_vm_admin_password=\$(cat $PASSWORD_FILE)${NC}"
   echo ""
