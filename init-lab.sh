@@ -14,7 +14,8 @@ NC='\033[0m'
 
 register_provider() {
   local ns=$1
-  local status=$(az provider show --namespace "$ns" --query "registrationState" -o tsv 2>/dev/null || echo "NotRegistered")
+  local status=$(az provider show --namespace "$ns" --query "registrationState" -o tsv 2>/dev/null || true)
+  status=${status:-NotRegistered}
 
   if [ "$status" != "Registered" ]; then
     echo -e "${CYAN}Registering provider: ${YELLOW}$ns${CYAN}...${NC}"
@@ -114,7 +115,9 @@ prompt_input "Enter the Automation Account name" AUTOMATION_ACCOUNT
 prompt_input "Enter VM admin username" VM_ADMIN_USERNAME
 
 echo -e "${CYAN}Generating secure password for VMs...${NC}"
-VM_ADMIN_PASSWORD=$(openssl rand -base64 16)
+# Generate a password that meets Azure complexity requirements:
+# 12+ chars, uppercase, lowercase, digit, special character.
+VM_ADMIN_PASSWORD="$(openssl rand -base64 12)$(openssl rand -hex 2)!Aa"
 # Export so Terraform picks it up via TF_VAR_*; we do NOT write the password
 # into terraform.tfvars (avoids leaving a secret on disk in cleartext).
 export TF_VAR_vm_admin_password="$VM_ADMIN_PASSWORD"
@@ -252,7 +255,8 @@ if [[ "$confirm" == "yes" || "$confirm" == "y" || "$confirm" == "Y" ]]; then
   echo ""
   echo -e "${GREEN}Deployment complete.${NC}"
   echo ""
-  echo -e "${CYAN}Resource Group:${NC} $RESOURCE_GROUP"
+  ACTUAL_RG=$(terraform output -raw resource_group_name 2>/dev/null || echo "$RESOURCE_GROUP")
+  echo -e "${CYAN}Resource Group:${NC} $ACTUAL_RG"
   echo -e "${CYAN}Location:${NC} $LOCATION"
   echo -e "${CYAN}Automation Account:${NC} $AUTOMATION_ACCOUNT"
   echo ""
