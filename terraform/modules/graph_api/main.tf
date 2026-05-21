@@ -49,25 +49,35 @@ resource "azurerm_automation_module" "graph_applications" {
 }
 
 # App role GUIDs from: https://learn.microsoft.com/en-us/graph/permissions-reference
+# These require Application Administrator or Privileged Role Administrator.
+# Set skip_graph_permissions = true to deploy runbooks without granting permissions.
 resource "azuread_app_role_assignment" "graph_users_read" {
+  count = var.skip_graph_permissions ? 0 : 1
+
   app_role_id         = "df021288-bdef-4463-88db-98f22de89214" # User.Read.All
   principal_object_id = var.managed_identity_principal_id
   resource_object_id  = data.azuread_service_principal.msgraph.object_id
 }
 
 resource "azuread_app_role_assignment" "graph_groups_read" {
+  count = var.skip_graph_permissions ? 0 : 1
+
   app_role_id         = "5b567255-7703-4780-807c-7be8301ae99b" # Group.Read.All
   principal_object_id = var.managed_identity_principal_id
   resource_object_id  = data.azuread_service_principal.msgraph.object_id
 }
 
 resource "azuread_app_role_assignment" "graph_applications_read" {
+  count = var.skip_graph_permissions ? 0 : 1
+
   app_role_id         = "9a5d68dd-52b0-4cc2-bd40-abcf44ac3a30" # Application.Read.All
   principal_object_id = var.managed_identity_principal_id
   resource_object_id  = data.azuread_service_principal.msgraph.object_id
 }
 
 resource "azuread_app_role_assignment" "graph_directory_read" {
+  count = var.skip_graph_permissions ? 0 : 1
+
   app_role_id         = "7ab1d382-f21e-4acd-a863-ba3e13f7da61" # Directory.Read.All
   principal_object_id = var.managed_identity_principal_id
   resource_object_id  = data.azuread_service_principal.msgraph.object_id

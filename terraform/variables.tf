@@ -44,6 +44,12 @@ variable "enable_graph_api" {
   default     = false
 }
 
+variable "skip_graph_permissions" {
+  description = "Skip Entra ID app role assignments for Graph API (set true if you lack Application Administrator / Privileged Role Administrator). Runbooks deploy but won't work until permissions are granted manually."
+  type        = bool
+  default     = true
+}
+
 variable "allowed_source_ip" {
   description = "Source IP or CIDR allowed for RDP/WinRM/SSH access. Use '*' for any (not recommended; requires acknowledge_open_nsg = true)."
   type        = string

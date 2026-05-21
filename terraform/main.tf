@@ -68,5 +68,6 @@ module "graph_api" {
   location                      = var.location
   automation_account_name       = module.automation_account.automation_account_name
   managed_identity_principal_id = module.automation_account.managed_identity_principal_id
+  skip_graph_permissions        = var.skip_graph_permissions
   tags                          = var.tags
 }
