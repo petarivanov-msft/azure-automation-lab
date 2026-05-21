@@ -11,36 +11,18 @@ resource "azurerm_automation_account" "main" {
   tags = var.tags
 }
 
-resource "azurerm_automation_module" "az_accounts" {
-  name                    = "Az.Accounts"
-  resource_group_name     = var.resource_group_name
-  automation_account_name = azurerm_automation_account.main.name
-
-  module_link {
-    uri = "https://www.powershellgallery.com/api/v2/package/Az.Accounts/2.13.2"
-  }
-}
-
-resource "azurerm_automation_module" "az_compute" {
-  name                    = "Az.Compute"
-  resource_group_name     = var.resource_group_name
-  automation_account_name = azurerm_automation_account.main.name
-
-  module_link {
-    uri = "https://www.powershellgallery.com/api/v2/package/Az.Compute/5.7.0"
-  }
-
-  depends_on = [azurerm_automation_module.az_accounts]
-}
-
-resource "azurerm_automation_module" "az_resources" {
-  name                    = "Az.Resources"
-  resource_group_name     = var.resource_group_name
-  automation_account_name = azurerm_automation_account.main.name
-
-  module_link {
-    uri = "https://www.powershellgallery.com/api/v2/package/Az.Resources/6.7.0"
-  }
-
-  depends_on = [azurerm_automation_module.az_accounts]
-}
+# The built-in PowerShell-5.1 and PowerShell-7.2 runtime environments already
+# include Az.Accounts, Az.Compute, and Az.Resources. Explicit module imports
+# are NOT needed — they add 5-10 minutes of deploy time downloading from
+# PowerShell Gallery and frequently hit transient CDN failures.
+#
+# If you need a specific newer version of an Az module, uncomment and pin:
+#
+# resource "azurerm_automation_module" "az_accounts" {
+#   name                    = "Az.Accounts"
+#   resource_group_name     = var.resource_group_name
+#   automation_account_name = azurerm_automation_account.main.name
+#   module_link {
+#     uri = "https://www.powershellgallery.com/api/v2/package/Az.Accounts/2.13.2"
+#   }
+# }
