@@ -11,6 +11,23 @@ resource "azurerm_automation_account" "main" {
   tags = var.tags
 }
 
+# Enable the Runtime Environment experience on the Automation Account.
+# Without this, custom runtime environments (PS 7.4, Python 3.10) are created
+# but runbooks silently fall back to the default PS 5.1 / no-version runtime.
+# The azurerm provider doesn't expose this property natively, so we use azapi.
+resource "azapi_update_resource" "enable_runtime_env" {
+  type        = "Microsoft.Automation/automationAccounts@2023-05-15-preview"
+  resource_id = azurerm_automation_account.main.id
+
+  body = jsonencode({
+    properties = {
+      features = {
+        runtimeEnvironment = "Enabled"
+      }
+    }
+  })
+}
+
 # The built-in PowerShell-5.1 and PowerShell-7.2 runtime environments already
 # include Az.Accounts, Az.Compute, and Az.Resources. Explicit module imports
 # are NOT needed — they add 5-10 minutes of deploy time downloading from
